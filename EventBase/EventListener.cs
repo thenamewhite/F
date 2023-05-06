@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
 // author  (hf) time：2023/2/16 10:38:20
-namespace CommonUtility
+namespace F
 {
     /// <summary>
     /// 实现泛型监听派发 
@@ -62,7 +62,6 @@ namespace CommonUtility
                 }
             }
         }
-
         public virtual void DispatchEvent<T>(ref T param)
         {
             var type = typeof(T);

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // author  (hf) time：2023/4/14 16:09:55
 
-namespace CommonUtility
+namespace F
 {
 
     /// <summary>

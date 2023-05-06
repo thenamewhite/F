@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 // author  (hf) time：2023/2/16 11:20:19
-namespace CommonUtility
+namespace F
 {
     /// <summary>
     /// 简单的对象池管理,

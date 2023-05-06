@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // author  (hf) time：2023/3/28 11:28:00
 
-namespace CommonUtility
+namespace F
 {
     public static class DictionaryExtend
     {

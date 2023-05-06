@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // author  (hf) time：2023/3/8 16:27:53
 
-namespace CommonUtility
+namespace F
 {
     public class DebugAttributeTitle : Attribute
     {

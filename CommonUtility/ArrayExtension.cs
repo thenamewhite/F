@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Runtime;
-namespace CommonUtility
+namespace F
 {
     public static class ArrayExtension
     {
@@ -53,14 +53,15 @@ namespace CommonUtility
         /// <summary>
         /// 获取数组指定范围内的值
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="array"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="endIndex"></param>
+        /// <typeparam name = "T" ></ typeparam >
+        /// < param name="array"></param>
+        /// <param name = "startIndex" ></ param >
+        /// < param name="endIndex"></param>
         /// <returns></returns>
         //public static T[] GetStartToEndIndex<T>(ref T[] array, int startIndex, int endIndex)
         //{
-        //    return array[startIndex..endIndex];
+        //return array[startIndex..endIndex];
         //}
+
     }
 }

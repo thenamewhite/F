@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Collision",
+    "\\CommonUtility",
+    "\\CommonUtility\\Ve",
+    "\\EventBase",
+    "\\Fix64",
+    "\\Tcp"
+  ],
+  "SelectedNode": "\\CommonUtility\\ArrayExtension.cs",
+  "PreviewInSolutionExplorer": false
+}

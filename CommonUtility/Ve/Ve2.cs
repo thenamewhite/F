@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // author  (hf) time：2023/4/14 16:11:28
 
-namespace CommonUtility
+namespace F
 {
     public struct Ve2
     {

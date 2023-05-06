@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // author  (hf) time：2023/2/16 16:26:44
 
-namespace CommonUtility
+namespace F
 {
     /// <summary>
     /// 初始化接口
