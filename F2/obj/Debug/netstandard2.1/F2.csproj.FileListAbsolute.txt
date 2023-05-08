@@ -1,0 +1,10 @@
+F:\F2\F2\obj\Debug\netstandard2.1\F2.csproj.AssemblyReference.cache
+F:\F2\F2\obj\Debug\netstandard2.1\F2.GeneratedMSBuildEditorConfig.editorconfig
+F:\F2\F2\obj\Debug\netstandard2.1\F2.AssemblyInfoInputs.cache
+F:\F2\F2\obj\Debug\netstandard2.1\F2.AssemblyInfo.cs
+F:\F2\F2\obj\Debug\netstandard2.1\F2.csproj.CoreCompileInputs.cache
+F:\F2\F2\bin\Debug\netstandard2.1\F2.deps.json
+F:\F2\F2\bin\Debug\netstandard2.1\F2.dll
+F:\F2\F2\bin\Debug\netstandard2.1\F2.pdb
+F:\F2\F2\obj\Debug\netstandard2.1\F2.dll
+F:\F2\F2\obj\Debug\netstandard2.1\F2.pdb
