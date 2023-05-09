@@ -8,9 +8,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 // author  (hf) time：2023/4/20 17:03:08
-
 namespace F
 {
+
+
     /// <summary>
     /// 字节管理
     /// </summary>
@@ -19,13 +20,14 @@ namespace F
         public int Position;
         public int Length;
 
-        private Span<byte> mBuffer;
+        public Span<byte> mBuffer;
+        //public byte[] mBuffer;
 
         public ByteStream(int length)
         {
             Position = 0;
             Length = length;
-            mBuffer = new Span<byte>();
+            mBuffer = new byte[Length];
         }
 
         public ByteStream(byte[] buffer)
@@ -39,35 +41,39 @@ namespace F
         {
             Position = 0;
             Length = buffer.Length;
-            mBuffer = new Span<byte>(buffer.ToArray());
+            //mBuffer = new Span<byte>(buffer.ToArray());
+            mBuffer = buffer;
         }
 
         public Span<byte> Span
         {
-            get { return mBuffer; }
+            //get { return mBuffer; }
+            get => mBuffer;
         }
 
-        public byte[] Bytes
-        {
-            get => mBuffer.ToArray();
-        }
+        //public byte[] Bytes
+        //{
+        //    get => mBuffer.ToArray();
+        //}
 
         /// <summary>
         /// 基础类型
         /// </summary>
-        public unsafe void Push<T>(in T data) where T : unmanaged
+        public void Push<T>(in T v) where T : unmanaged
         {
-            fixed (T* ptr = &data)
+            unsafe
             {
-                var size = sizeof(T);
-                SetBuffSize(size);
-                fixed (byte* bptr = mBuffer)
+                fixed (T* ptr = &v)
                 {
-                    Unsafe.CopyBlockUnaligned(bptr + Position, ptr, (uint)size);
+                    var size = sizeof(T);
+                    SetBuffSize(size);
+                    fixed (byte* bptr = mBuffer)
+                    {
+                        Unsafe.CopyBlockUnaligned(bptr + Position, ptr, (uint)size);
 
+                    }
+                    Position += size;
                 }
-                Position += size;
-
             }
         }
         public unsafe void Push(string v, Encoding encoding = null)
@@ -107,7 +113,6 @@ namespace F
         public unsafe void Push(string[] v)
         {
             var length = (v?.Length).GetValueOrDefault();
-            byte[] bytArr = new byte[length];
             if (length == 0)
             {
                 Push(0);
@@ -183,6 +188,10 @@ namespace F
 
         public int ReadLength(int size)
         {
+            if (Length <= Position)
+            {
+                return 0;
+            }
             var length = 0;
             var offset = Position;
             var v = mBuffer[offset];
@@ -190,6 +199,7 @@ namespace F
             {
                 if ((byte)((v & 0x7F) | 0x80) == v)
                 {
+                    //length++;
                     break;
                 }
                 v = mBuffer[offset += size];
