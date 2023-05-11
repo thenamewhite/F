@@ -62,9 +62,9 @@ namespace F
             //TODO没走压缩数据大小的，获取了类型字节长度直接write,后续在看是否压缩字节
             var length = sizeof(T);
             TrySetBuffLength(length);
-            Span<byte> floatSpan = stackalloc byte[length];
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(floatSpan), v);
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref floatSpan[0], (uint)length);
+            Span<byte> span = stackalloc byte[length];
+            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v);
+            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)length);
             Position += length;
         }
         public unsafe void Push(string v, Encoding encoding = null)
