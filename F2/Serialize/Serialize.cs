@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
@@ -35,13 +37,14 @@ namespace F
             foreach (var item in fildes)
             {
                 var v = item.GetValue(obj);
+                //null 值直接不写入
                 if (v != null)
                 {
-                    Push(v);
+                    PushObj(v);
                 }
             }
         }
-        public void Push(object obj)
+        public void PushObj(object obj)
         {
             switch (obj)
             {
@@ -51,6 +54,9 @@ namespace F
                     Push(v); break;
                 case float v:
                     Push(v); break;
+                case Enum v:
+                    PushEnum(v);
+                    break;
                 case string v:
                     Push<string>(v); break;
                 case ulong v:
@@ -66,8 +72,30 @@ namespace F
                 case char v:
                     Push(v); break;
                 default:
-                    PushAarray(obj);
+                    if (obj.GetType().IsArray)
+                    {
+                        PushAarray(obj);
+                    }
+                    else
+                    {
+                        WriteObjs(obj);
+                    }
                     break;
+            }
+        }
+        private void PushEnum(Enum v)
+        {
+            Type underlyingType = Enum.GetUnderlyingType(v.GetType());
+            switch (Type.GetTypeCode(underlyingType))
+            {
+                case TypeCode.SByte:
+                case TypeCode.Byte: Push<byte>(Convert.ToByte(v)); break;
+                case TypeCode.Int16:
+                case TypeCode.UInt16: Push<int>(Convert.ToInt32(v)); break;
+                case TypeCode.Int32:
+                case TypeCode.UInt32: Push<UInt32>(Convert.ToUInt32(v)); break;
+                case TypeCode.Int64:
+                case TypeCode.UInt64: Push<ulong>(Convert.ToUInt64(v)); break;
             }
         }
         public void PushAarray(object obj)
@@ -86,15 +114,85 @@ namespace F
                     Push<string>(v); break;
                 case byte[] v:
                     break;
-                case sbyte[] v: break;
-                case short[] v: break;
-                case ushort[] v: break;
-                case ulong[] v: break;
+                case sbyte[] v:
+                    Push(v); break;
+                case short[] v:
+                    Push(v); break;
+                case ushort[] v:
+                    Push(v); break;
+                case ulong[] v:
+                    Push(v); break;
                 default:
                     throw new Exception($"not find,{obj.GetType()}");
             }
         }
 
+
+        /// <summary>
+        /// 通过类（反射）读取
+        /// </summary>
+        /// <param name="v"></param>
+        public void ReadObjs(object v)
+        {
+
+            var sapn = GetSapn();
+
+            SetFiledValue(sapn, v);
+
+            void SetFiledValue(ByteStream stream, object v)
+            {
+                var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                foreach (var item in fildes)
+                {
+                    var type = item.FieldType;
+                    if (type == typeof(int))
+                    {
+                        item.SetValue(v, stream.Read<int>());
+                    }
+                    else if (type.IsEnum)
+                    {
+                        Type t = Enum.GetUnderlyingType(type);
+                        //var d = readV.Read<uint>();
+                        object eV = default;
+                        switch (Type.GetTypeCode(t))
+                        {
+                            case TypeCode.SByte:
+                            case TypeCode.Byte: eV = Enum.ToObject(type.GetElementType(), stream.Read<byte>()); break;
+                            case TypeCode.Int16:
+                            case TypeCode.UInt16: eV = Enum.ToObject(type, stream.Read<int>()); break;
+                            case TypeCode.Int32:
+                            case TypeCode.UInt32: eV = Enum.ToObject(type, stream.Read<uint>()); break;
+                            case TypeCode.Int64:
+                            case TypeCode.UInt64: eV = Enum.ToObject(type, stream.Read<ulong>()); break;
+                        }
+                        item.SetValue(v, eV);
+                    }
+                    else if (type == typeof(string))
+                    {
+                        item.SetValue(v, stream.Read());
+                    }
+                    else if (type == typeof(int[]))
+                    {
+                        item.SetValue(v, stream.ReadArray<int>());
+                    }
+                    else if (type == typeof(float[]))
+                    {
+                        item.SetValue(v, stream.ReadArray<float>());
+                    }
+                    else if (type == typeof(string[]))
+                    {
+                        item.SetValue(v, stream.ReadArray());
+                    }
+                    else if (type.IsValueType)
+                    {
+                        //创建结构体
+                        var d = Activator.CreateInstance(type);
+                        SetFiledValue(stream, d);
+                        item.SetValue(v, d);
+                    }
+                }
+            }
+        }
 
         public void Push<T>(T v) where T : unmanaged
         {
@@ -129,31 +227,6 @@ namespace F
 
         public void Push<T>(List<T> v) { }
 
-        public void ReadObjs(object v)
-        {
-            var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            var readV = GetSapn();
-            foreach (var item in fildes)
-            {
-                var type = item.FieldType;
-                if (type == typeof(int))
-                {
-                    item.SetValue(v, readV.Read<int>());
-                }
-                else if (type == typeof(string))
-                {
-                    item.SetValue(v, readV.Read());
-                }
-                else if (type == typeof(int[]))
-                {
-                    item.SetValue(v, readV.ReadArray<int>());
-                }
-                else if (type == typeof(float[]))
-                {
-                    item.SetValue(v, readV.ReadArray<float>());
-                }
-            }
-        }
 
         public void Read(object obj)
         {
@@ -185,6 +258,13 @@ namespace F
                     //Read(obj);
                     break;
             }
+        }
+
+        public T Read<T>() where T : unmanaged
+        {
+            var span = GetSapn();
+            mPosition += span.Position;
+            return span.Read<T>();
         }
 
         public void Read<T>(ref T v) where T : unmanaged

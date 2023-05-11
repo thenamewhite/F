@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 // author  (hf) time：2023/4/20 17:03:08
 namespace F
 {
-
-
     /// <summary>
     /// 字节管理
     /// </summary>
@@ -47,15 +45,13 @@ namespace F
 
         public Span<byte> Span
         {
-            //get { return mBuffer; }
             get => mBuffer;
         }
 
-        //public byte[] Bytes
-        //{
-        //    get => mBuffer.ToArray();
-        //}
-
+        public byte[] Bytes
+        {
+            get => mBuffer.ToArray();
+        }
         /// <summary>
         /// 基础类型
         /// </summary>
@@ -81,6 +77,7 @@ namespace F
             var strCount = (v?.Length).GetValueOrDefault();
             fixed (char* cPtr = v)
             {
+                PushLength(strCount);
                 var byteCount = (encoding ?? Encoding.UTF8).GetByteCount(cPtr, strCount);
                 SetBuffSize(byteCount);
                 fixed (byte* bptr = mBuffer)
@@ -89,7 +86,6 @@ namespace F
                 }
                 Position += byteCount;
             }
-            PushLength(strCount);
         }
 
         public unsafe void Push<T>(T[] v) where T : unmanaged
@@ -105,10 +101,10 @@ namespace F
                     bytArr[i] = pByte[i];
                 }
             }
+            PushLength(length);
             SetBuffSize(bytArr.Length);
             Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytArr[0], (uint)bytArr.Length);
             Position += bytArr.Length;
-            PushLength(length);
         }
         public unsafe void Push(string[] v)
         {
@@ -119,6 +115,7 @@ namespace F
             }
             else
             {
+                PushLength(length);
                 for (int i = 0; i < v.Length; i++)
                 {
                     Push(v[i]);
@@ -129,17 +126,52 @@ namespace F
         public unsafe void PushLength(int value)
         {
             byte* buffer = stackalloc byte[8];
-            //參考proto WriteUInt32Variant
+            //參考proto WriteRawVarint32
             int count = 0;
-            do
+            while (value > 127)
             {
-                buffer[count] = (byte)((value & 0x7F) | 0x80);
+                buffer[count] = (byte)((value & 0x7F | 0x80));
+                value >>= 7;
                 count++;
-            } while ((value >>= 7) != 0);
+            }
+            buffer[count] = (byte)value;
+            count++;
             SetBuffSize(count);
+            fixed (byte* bptr = mBuffer)
+            {
+                Unsafe.CopyBlockUnaligned(bptr + Position, buffer, (uint)count);
+            }
             Position += count;
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position - 1], ref buffer[0], (uint)count);
         }
+
+        public int ReadLength()
+        {
+            //proto ParseRawVarint64
+            ulong result = mBuffer[Position++];
+            if (result < 128)
+            {
+                return (int)result;
+            }
+            else
+            {
+                result &= 0x7f;
+                int shift = 7;
+                do
+                {
+                    byte b = mBuffer[Position++];
+                    result |= (ulong)(b & 0x7F) << shift;
+                    if (b < 0x80)
+                    {
+                        return (int)result;
+                    }
+                    shift += 7;
+                }
+                //最多写入8个
+                while (shift < 64);
+            }
+            return (int)result;
+        }
+
         public unsafe ref T Read<T>() where T : unmanaged
         {
             ref var result = ref Unsafe.As<byte, T>(ref mBuffer[Position]);
@@ -148,64 +180,39 @@ namespace F
         }
         public unsafe string Read()
         {
-            var count = ReadLength(1);
+            var count = ReadLength();
             if (count == 0) return string.Empty;
             fixed (byte* bptr = mBuffer)
             {
                 var str = Encoding.UTF8.GetString(bptr + Position, count);
-                Position += count + 1;
+                Position += count;
                 return str;
             }
         }
 
         public unsafe T[] ReadArray<T>() where T : unmanaged
         {
-            var size = sizeof(T); ;
-            var array = ReadAarray<T>(size);
+            var array = ReadAarray<T>();
             var index = 0;
             while (index < array.Length)
             {
                 array[index++] = Read<T>();
             }
-            Position += 1;
             return array;
         }
 
         public unsafe string[] ReadArray()
         {
-            var length = ReadLength(1);
+            var length = ReadLength();
             var array = length == 0 ? Array.Empty<string>() : new string[1] { Read() };
             return array;
         }
 
 
-        private T[] ReadAarray<T>(int size)
+        private T[] ReadAarray<T>()
         {
-            var length = ReadLength(size);
+            var length = ReadLength();
             return length == 0 ? Array.Empty<T>() : new T[length];
-        }
-
-
-        public int ReadLength(int size)
-        {
-            if (Length <= Position)
-            {
-                return 0;
-            }
-            var length = 0;
-            var offset = Position;
-            var v = mBuffer[offset];
-            for (int i = Position; i < mBuffer.Length; i += size)
-            {
-                if ((byte)((v & 0x7F) | 0x80) == v)
-                {
-                    //length++;
-                    break;
-                }
-                v = mBuffer[offset += size];
-                length++;
-            }
-            return length;
         }
 
 
