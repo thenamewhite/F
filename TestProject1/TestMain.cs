@@ -14,12 +14,45 @@ namespace TestProject1
             var s = F.StringExtension.Split(c, "0");
 
             var sere = new TestSeriale();
-            sere.a = "1";
-            sere.Inta = 2;
-            sere.Intsa = new int[1] { 1 };
-            sere.floats = new float[3] { 1.1f, 2f, 3f };
+            //sere.strings = new string[1] { "" +
+            //    "" +
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad" +
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad" +
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
+            //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
+            //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
+            //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
+            //"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.adQQQQQQQQQQ"};
+            sere.a = "1.1f";
+            sere.strings = new string[] { };
+            sere.Inta = 9999999;
+            sere.aaaa = TestSeriale.bb.a;
+            sere.Intsa = new int[0] { };
+            //{ 1, -2, 2 };
+            sere.Intsb = new int[3] { 1, -2, -3 };
+            sere.cc = new TestSeriale.Sta() { a = 3 };
+            sere.floats = new float[3] { -1.1f, 2f, 3f };
             var sbb = new Serialize();
             sere.Serialization(sbb);
+            var value = int.MaxValue;
+            var count = 0;
+            //while (value > 127)
+            //{
+            //    //buffer[count] = (byte)((value & 0x7F | 0x80));
+            //    value >>= 7;
+            //    //count++;
+            //}
+
+            //File.WriteAllBytes("F:\\F2\\TestProject1\\11.txt", sbb.bytes);
+
+            //var readc = File.ReadAllBytes("F:\\F2\\TestProject1\\11.txt");
+            //sere.Serialization(sbb);
             var d = new TestSeriale();
             d.Deserialization(new Serialize() { bytes = sbb.bytes });
             //var d = new ByteStream();

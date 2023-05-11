@@ -11,11 +11,26 @@ namespace TestProject1
 {
     public class TestSeriale : ISerialize
     {
+
+        public string[] strings;
         public string a;
         public int Inta;
         //public List<string> Lista;
         public int[] Intsa;
+        public int[] Intsb;
+        public bb aaaa;
         public float[] floats;
+        public Sta cc;
+
+        //public Sta Staa;
+        public struct Sta
+        {
+            public int a;
+        }
+        public enum bb
+        {
+            a = 3,
+        }
         public void Deserialization(Serialize serialize)
         {
             serialize.ReadObjs(this);
@@ -24,6 +39,7 @@ namespace TestProject1
         public void Serialization(Serialize serialize)
         {
             serialize.WriteObjs(this);
+            //serialize.Push(aaaa);
         }
     }
 }

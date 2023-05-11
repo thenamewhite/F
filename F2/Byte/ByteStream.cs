@@ -52,25 +52,20 @@ namespace F
         {
             get => mBuffer.ToArray();
         }
+
+
         /// <summary>
         /// 基础类型
         /// </summary>
-        public void Push<T>(in T v) where T : unmanaged
+        public unsafe void Push<T>(in T v) where T : unmanaged
         {
-            unsafe
-            {
-                fixed (T* ptr = &v)
-                {
-                    var size = sizeof(T);
-                    SetBuffSize(size);
-                    fixed (byte* bptr = mBuffer)
-                    {
-                        Unsafe.CopyBlockUnaligned(bptr + Position, ptr, (uint)size);
-
-                    }
-                    Position += size;
-                }
-            }
+            //TODO没走压缩数据大小的，获取了类型字节长度直接write,后续在看是否压缩字节
+            var length = sizeof(T);
+            TrySetBuffLength(length);
+            Span<byte> floatSpan = stackalloc byte[length];
+            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(floatSpan), v);
+            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref floatSpan[0], (uint)length);
+            Position += length;
         }
         public unsafe void Push(string v, Encoding encoding = null)
         {
@@ -79,7 +74,7 @@ namespace F
             {
                 PushLength(strCount);
                 var byteCount = (encoding ?? Encoding.UTF8).GetByteCount(cPtr, strCount);
-                SetBuffSize(byteCount);
+                TrySetBuffLength(byteCount);
                 fixed (byte* bptr = mBuffer)
                 {
                     Encoding.UTF8.GetBytes(cPtr, strCount, bptr + Position, byteCount);
@@ -91,31 +86,29 @@ namespace F
         public unsafe void Push<T>(T[] v) where T : unmanaged
         {
             var length = (v?.Length).GetValueOrDefault();
-            byte[] bytArr = new byte[sizeof(T) * length];
-            //Span<byte> bytArr = new Span<byte>();
-            fixed (T* pInt = v)
-            {
-                byte* pByte = (byte*)pInt;
-                for (int i = 0; i < bytArr.Length; i++)
-                {
-                    bytArr[i] = pByte[i];
-                }
-            }
             PushLength(length);
-            SetBuffSize(bytArr.Length);
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytArr[0], (uint)bytArr.Length);
-            Position += bytArr.Length;
+            if (length > 0)
+            {
+                byte[] bytArr = new byte[sizeof(T) * length];
+                fixed (T* pInt = v)
+                {
+                    byte* pByte = (byte*)pInt;
+                    for (int i = 0; i < bytArr.Length; i++)
+                    {
+                        bytArr[i] = pByte[i];
+                    }
+                }
+                TrySetBuffLength(bytArr.Length);
+                Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytArr[0], (uint)bytArr.Length);
+                Position += bytArr.Length;
+            }
         }
         public unsafe void Push(string[] v)
         {
             var length = (v?.Length).GetValueOrDefault();
-            if (length == 0)
+            PushLength(length);
+            if (length > 0)
             {
-                Push(0);
-            }
-            else
-            {
-                PushLength(length);
                 for (int i = 0; i < v.Length; i++)
                 {
                     Push(v[i]);
@@ -123,10 +116,10 @@ namespace F
             }
         }
 
-        public unsafe void PushLength(int value)
+        public unsafe void PushLength(long value)
         {
             byte* buffer = stackalloc byte[8];
-            //參考proto WriteRawVarint32
+            //參考proto WriteRawVarint64
             int count = 0;
             while (value > 127)
             {
@@ -136,7 +129,7 @@ namespace F
             }
             buffer[count] = (byte)value;
             count++;
-            SetBuffSize(count);
+            TrySetBuffLength(count);
             fixed (byte* bptr = mBuffer)
             {
                 Unsafe.CopyBlockUnaligned(bptr + Position, buffer, (uint)count);
@@ -166,7 +159,6 @@ namespace F
                     }
                     shift += 7;
                 }
-                //最多写入8个
                 while (shift < 64);
             }
             return (int)result;
@@ -216,7 +208,7 @@ namespace F
         }
 
 
-        private void SetBuffSize(int newSize)
+        public void TrySetBuffLength(int newSize)
         {
             if (mBuffer.Length == 0)
             {
