@@ -263,22 +263,27 @@ namespace F
         public T Read<T>() where T : unmanaged
         {
             var span = GetSapn();
-            mPosition += span.Position;
-            return span.Read<T>();
+            var v = span.Read<T>();
+            mPosition += span.Position - mPosition;
+            return v;
+        }
+
+        public string Read()
+        {
+            var span = GetSapn();
+            var v = span.Read();
+            mPosition += span.Position - mPosition;
+            return v;
         }
 
         public void Read<T>(ref T v) where T : unmanaged
         {
-            var span = GetSapn();
-            v = span.Read<T>();
-            mPosition += span.Position;
+            v = Read<T>();
         }
 
         public void Read<T>(ref string v)
         {
-            var span = GetSapn();
-            v = span.Read();
-            mPosition += span.Position;
+            v = Read();
         }
         public void Read<T>(ref T[] v) where T : unmanaged
         {
