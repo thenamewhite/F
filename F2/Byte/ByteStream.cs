@@ -21,6 +21,11 @@ namespace F
         public Span<byte> mBuffer;
         //public byte[] mBuffer;
 
+        public bool IsEnd
+        {
+            get => Length == Position;
+        }
+
         public ByteStream(int length)
         {
             Position = 0;
@@ -115,6 +120,30 @@ namespace F
                 }
             }
         }
+        //public unsafe void Push(List<string> v)
+        //{
+        //    var length = (v?.Count).GetValueOrDefault();
+        //    PushLength(length);
+        //    if (length > 0)
+        //    {
+        //        for (int i = 0; i < v.Count; i++)
+        //        {
+        //            Push(v[i]);
+        //        }
+        //    }
+        //}
+        //public unsafe void Push<T>(List<T> v) where T : unmanaged
+        //{
+        //    var length = (v?.Count).GetValueOrDefault();
+        //    PushLength(length);
+        //    if (length > 0)
+        //    {
+        //        for (int i = 0; i < v.Count; i++)
+        //        {
+        //            Push(v[i]);
+        //        }
+        //    }
+        //}
 
         public unsafe void PushLength(long value)
         {
@@ -199,6 +228,12 @@ namespace F
             var array = length == 0 ? Array.Empty<string>() : new string[1] { Read() };
             return array;
         }
+        //public unsafe List<string> ReadArray<T>()
+        //{
+        //    var length = ReadLength();
+        //    var array = length == 0 ? new List<string>() : new List<string> { Read() };
+        //    return array;
+        //}
 
 
         private T[] ReadAarray<T>()

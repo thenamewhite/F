@@ -7,28 +7,32 @@ using System.Runtime.CompilerServices;
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
 {
-    public interface ISerialize
+    public interface IFSerializable
     {
         /// <summary>
         /// 自定义序列化
         /// </summary>
-        /// <param name="bytes"></param>
+        /// <param name="serializable"></param>
 
-        public void Serialization(Serialize bytes);
+        public void Serialization(Serializable serializable);
 
         /// <summary>
         /// 
         /// </summary>
-        public void Deserialization(Serialize bytes);
+        public void Deserialization(Serializable serializable);
     }
 
-    public class Serialize
+    public class Serializable
     {
         public byte[] bytes = Array.Empty<byte>();
         private int mPosition;
         public ByteStream GetSapn()
         {
             return new ByteStream(bytes) { Position = mPosition };
+        }
+        public bool IsEnd
+        {
+            get => GetSapn().IsEnd;
         }
 
         public void WriteObjs(object obj)
@@ -58,7 +62,7 @@ namespace F
                     PushEnum(v);
                     break;
                 case string v:
-                    Push<string>(v); break;
+                    Push(v); break;
                 case ulong v:
                     Push(v); break;
                 case double v:
@@ -111,7 +115,7 @@ namespace F
                 case float[] v:
                     Push(v); break;
                 case string[] v:
-                    Push<string>(v); break;
+                    Push(v); break;
                 case byte[] v:
                     break;
                 case sbyte[] v:
@@ -201,7 +205,7 @@ namespace F
             mPosition += span.Position - mPosition;
             bytes = span;
         }
-        public void Push<T>(string v)
+        public void Push(string v)
         {
             var span = GetSapn();
             span.Push(v);
@@ -217,7 +221,7 @@ namespace F
             bytes = span;
         }
 
-        public void Push<T>(string[] v)
+        public void Push(string[] v)
         {
             var span = GetSapn();
             span.Push(v);
@@ -225,10 +229,22 @@ namespace F
             bytes = span;
         }
 
-        public void Push<T>(List<T> v) { }
+        //public void Push<T>(List<T> v) where T : unmanaged
+        //{
+        //    var span = GetSapn();
+        //    span.Push(v);
+        //    mPosition += span.Position - mPosition;
+        //    bytes = span;
+        //}
+        //public void Push(List<string> v)
+        //{
+        //    var span = GetSapn();
+        //    span.Push(v);
+        //    mPosition += span.Position - mPosition;
+        //    bytes = span;
+        //}
 
-
-        public void Read(object obj)
+        private void Read(object obj)
         {
             switch (obj)
             {
@@ -239,7 +255,7 @@ namespace F
                 case float v:
                     Read(ref v); break;
                 case string v:
-                    Read<string>(ref v); break;
+                    Read(ref v); break;
                 case ulong v:
                     Read(ref v); break;
                 case double v:
@@ -255,10 +271,23 @@ namespace F
                 case int[] v:
                     Read(ref v); break;
                 default:
+                    //ReadObjs()
                     //Read(obj);
                     break;
             }
         }
+
+
+
+        public void ReadSerializables<T>(ref T v) where T : IFSerializable
+        {
+            v.Deserialization(this);
+        }
+        public void PushSerializables<T>(T v) where T : IFSerializable
+        {
+            v.Serialization(this);
+        }
+
 
         public T Read<T>() where T : unmanaged
         {
@@ -276,12 +305,27 @@ namespace F
             return v;
         }
 
+        public T[] ReadArray<T>() where T : unmanaged
+        {
+            var span = GetSapn();
+            var v = span.ReadArray<T>();
+            mPosition += span.Position - mPosition;
+            return v;
+        }
+        public string[] ReadArray()
+        {
+            var span = GetSapn();
+            var v = span.ReadArray();
+            mPosition += span.Position - mPosition;
+            return v;
+        }
+
         public void Read<T>(ref T v) where T : unmanaged
         {
             v = Read<T>();
         }
 
-        public void Read<T>(ref string v)
+        public void Read(ref string v)
         {
             v = Read();
         }
@@ -289,12 +333,25 @@ namespace F
         {
             var span = GetSapn();
             v = span.ReadArray<T>();
-            mPosition += span.Position;
+            mPosition += span.Position - mPosition;
         }
 
-        public void Read<T>(ref List<T> v)
+        public void Read(ref string[] v)
         {
+            var span = GetSapn();
+            v = span.ReadArray();
+            mPosition += span.Position - mPosition;
         }
 
+
+        //public void Read<T>(ref List<T> v) where T : unmanaged
+        //{
+        //}
+        //public void Read(ref List<string> v)
+        //{
+        //    var span = GetSapn();
+        //    v = span.ReadArray();
+        //    mPosition += span.Position - mPosition;
+        //}
     }
 }

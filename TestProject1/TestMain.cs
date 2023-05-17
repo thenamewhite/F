@@ -29,16 +29,15 @@ namespace TestProject1
             //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
             //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
             //"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.adQQQQQQQQQQ"};
-            sere.a = "1.1f";
-            sere.strings = new string[] { };
+            sere.StringA = "1.1f";
+            sere.Strings = new string[] { };
             sere.Inta = 9999999;
-            sere.aaaa = TestSeriale.bb.a;
+            sere.Enum = TestSeriale.bb.b;
             sere.Intsa = new int[0] { };
             //{ 1, -2, 2 };
-            sere.Intsb = new int[3] { 1, -2, -3 };
-            sere.cc = new TestSeriale.Sta() { a = 3 };
+            sere.Struct = new TestSeriale.Sta() { a = 3, As = new int[2] { 2, 3 }, keyValuePairs = new Dictionary<int, int[]>() { { 1, new int[] { 1, 3, 2 } } } };
             sere.floats = new float[3] { -1.1f, 2f, 3f };
-            var sbb = new Serialize();
+            var sbb = new Serializable();
             sere.Serialization(sbb);
             var value = int.MaxValue;
             var count = 0;
@@ -54,7 +53,7 @@ namespace TestProject1
             //var readc = File.ReadAllBytes("F:\\F2\\TestProject1\\11.txt");
             //sere.Serialization(sbb);
             var d = new TestSeriale();
-            d.Deserialization(new Serialize() { bytes = sbb.bytes });
+            d.Deserialization(new Serializable() { bytes = sbb.bytes });
             //var d = new ByteStream();
             //d.Push(-1);
             //var d2 = new ByteStream(d.Span);
