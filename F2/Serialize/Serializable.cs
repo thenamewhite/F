@@ -24,26 +24,26 @@ namespace F
 
     public class Serializable
     {
-        public byte[] bytes = Array.Empty<byte>();
+        public byte[] Bytes = Array.Empty<byte>();
         private int mPosition;
-        public ByteStream GetSapn()
+        public ByteStream GetSpan()
         {
-            return new ByteStream(bytes) { Position = mPosition };
+            return new ByteStream(Bytes) { Position = mPosition };
         }
         public Serializable(byte[] bytes)
         {
-            this.bytes = bytes;
+            Bytes = bytes;
         }
         public Serializable(Span<byte> bytes)
         {
-            this.bytes = bytes.ToArray();
+            Bytes = bytes.ToArray();
         }
         public Serializable()
         {
         }
         public bool IsEnd
         {
-            get => GetSapn().IsEnd;
+            get => GetSpan().IsEnd;
         }
 
         public void WriteObjs(object obj)
@@ -150,7 +150,7 @@ namespace F
         public void ReadObjs(object v)
         {
 
-            var sapn = GetSapn();
+            var sapn = GetSpan();
 
             SetFiledValue(sapn, v);
 
@@ -211,33 +211,33 @@ namespace F
 
         public void Push<T>(T v) where T : unmanaged
         {
-            var span = GetSapn();
+            var span = GetSpan();
             span.Push(v);
             mPosition += span.Position - mPosition;
-            bytes = span;
+            Bytes = span;
         }
         public void Push(string v)
         {
-            var span = GetSapn();
+            var span = GetSpan();
             span.Push(v);
             mPosition += span.Position - mPosition;
-            bytes = span;
+            Bytes = span;
         }
 
         public void Push<T>(T[] v) where T : unmanaged
         {
-            var span = GetSapn();
+            var span = GetSpan();
             span.Push(v);
             mPosition += span.Position - mPosition;
-            bytes = span;
+            Bytes = span;
         }
 
         public void Push(string[] v)
         {
-            var span = GetSapn();
+            var span = GetSpan();
             span.Push(v);
             mPosition += span.Position - mPosition;
-            bytes = span;
+            Bytes = span;
         }
 
         //public void Push<T>(List<T> v) where T : unmanaged
@@ -302,7 +302,7 @@ namespace F
 
         public T Read<T>() where T : unmanaged
         {
-            var span = GetSapn();
+            var span = GetSpan();
             var v = span.Read<T>();
             mPosition += span.Position - mPosition;
             return v;
@@ -310,7 +310,7 @@ namespace F
 
         public string Read()
         {
-            var span = GetSapn();
+            var span = GetSpan();
             var v = span.Read();
             mPosition += span.Position - mPosition;
             return v;
@@ -318,14 +318,14 @@ namespace F
 
         public T[] ReadArray<T>() where T : unmanaged
         {
-            var span = GetSapn();
+            var span = GetSpan();
             var v = span.ReadArray<T>();
             mPosition += span.Position - mPosition;
             return v;
         }
         public string[] ReadArray()
         {
-            var span = GetSapn();
+            var span = GetSpan();
             var v = span.ReadArray();
             mPosition += span.Position - mPosition;
             return v;

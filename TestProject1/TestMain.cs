@@ -53,7 +53,7 @@ namespace TestProject1
             //var readc = File.ReadAllBytes("F:\\F2\\TestProject1\\11.txt");
             //sere.Serialization(sbb);
             var d = new TestSeriale();
-            d.Deserialization(new Serializable() { bytes = sbb.bytes });
+            d.Deserialization(new Serializable() { Bytes = sbb.Bytes });
             //var d = new ByteStream();
             //d.Push(-1);
             //var d2 = new ByteStream(d.Span);
