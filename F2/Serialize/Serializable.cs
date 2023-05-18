@@ -30,6 +30,17 @@ namespace F
         {
             return new ByteStream(bytes) { Position = mPosition };
         }
+        public Serializable(byte[] bytes)
+        {
+            this.bytes = bytes;
+        }
+        public Serializable(Span<byte> bytes)
+        {
+            this.bytes = bytes.ToArray();
+        }
+        public Serializable()
+        {
+        }
         public bool IsEnd
         {
             get => GetSapn().IsEnd;
@@ -331,16 +342,12 @@ namespace F
         }
         public void Read<T>(ref T[] v) where T : unmanaged
         {
-            var span = GetSapn();
-            v = span.ReadArray<T>();
-            mPosition += span.Position - mPosition;
+            v = ReadArray<T>();
         }
 
         public void Read(ref string[] v)
         {
-            var span = GetSapn();
-            v = span.ReadArray();
-            mPosition += span.Position - mPosition;
+            v = ReadArray();
         }
 
 

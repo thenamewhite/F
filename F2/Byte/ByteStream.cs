@@ -18,7 +18,7 @@ namespace F
         public int Position;
         public int Length;
 
-        public Span<byte> mBuffer;
+        private Span<byte> mBuffer;
         //public byte[] mBuffer;
 
         public bool IsEnd
@@ -92,20 +92,32 @@ namespace F
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
-            if (length > 0)
+            if (v is byte[] bytes)
             {
-                byte[] bytArr = new byte[sizeof(T) * length];
-                fixed (T* pInt = v)
+                if (length > 0)
                 {
-                    byte* pByte = (byte*)pInt;
-                    for (int i = 0; i < bytArr.Length; i++)
-                    {
-                        bytArr[i] = pByte[i];
-                    }
+                    TrySetBuffLength(length);
+                    Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytes[0], (uint)length);
+                    Position += length;
                 }
-                TrySetBuffLength(bytArr.Length);
-                Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytArr[0], (uint)bytArr.Length);
-                Position += bytArr.Length;
+            }
+            else
+            {
+                if (length > 0)
+                {
+                    byte[] bytArr = new byte[sizeof(T) * length];
+                    fixed (T* pInt = v)
+                    {
+                        byte* pByte = (byte*)pInt;
+                        for (int i = 0; i < bytArr.Length; i++)
+                        {
+                            bytArr[i] = pByte[i];
+                        }
+                    }
+                    TrySetBuffLength(bytArr.Length);
+                    Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytArr[0], (uint)bytArr.Length);
+                    Position += bytArr.Length;
+                }
             }
         }
         public unsafe void Push(string[] v)
@@ -267,6 +279,24 @@ namespace F
             Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref from[fromIndex], (uint)size);
             Position += size;
         }
+
+        public void SetPosition(uint position)
+        {
+            Position = (int)position;
+        }
+        //public override string ToString()
+        //{
+        //    var count = Math.Min(short.MaxValue, Length);
+        //    var strbuf = new StringBuilder(count);
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        strbuf.Append(Bytes[i].ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
+        //        //return Number.FormatUInt32(m_value, format, null);
+        //    }
+
+        //    return strbuf.ToString();
+        //}
+
         public static implicit operator byte[](ByteStream Buffer) => Buffer.Span.ToArray();
     }
 }
