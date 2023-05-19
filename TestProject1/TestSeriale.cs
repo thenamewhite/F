@@ -22,6 +22,9 @@ namespace TestProject1
         public List<string> ListString;
         public List<int> ListInt;
         public Sta Struct;
+        public int[][] Int2Array;
+
+        public string[][] String2Array;
         public enum bb
         {
             a = 3,
@@ -74,7 +77,8 @@ namespace TestProject1
             serialize.Read(ref floats);
             serialize.Read(ref Enum);
             serialize.Read(ref Strings);
-            //serialize.Read(ref ListString);
+            serialize.Read(ref Int2Array);
+            serialize.Read(ref String2Array);
             serialize.ReadSerializables(ref Struct);
         }
 
@@ -84,7 +88,8 @@ namespace TestProject1
             serialize.Push(floats);
             serialize.Push(Enum);
             serialize.Push(Strings);
-            //serialize.Push(ListString);
+            serialize.Push(Int2Array);
+            serialize.Push(String2Array);
             serialize.PushSerializables(Struct);
         }
     }

@@ -9,76 +9,20 @@ namespace TestProject1
 
         public static void Main()
         {
-            var c = "1234123";
-            var sp = c.Split("4");
-            var s = F.StringExtension.Split(c, "0");
-
-            var sere = new TestSeriale();
-            //sere.strings = new string[1] { "" +
-            //    "" +
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad" +
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad" +
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //    "123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
-            //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
-            //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"
-            //+"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.ad"+
-            //"123123123adsadadasdasdasdasdasdasdasda.sdasdasdasda.da.d.a.sd.a.ds.asd.a.s.d.as.d.as.d.a.d.adQQQQQQQQQQ"};
-            sere.StringA = "1.1f";
-            sere.Strings = new string[] { };
-            sere.Inta = 9999999;
-            sere.Enum = TestSeriale.bb.b;
-            sere.Intsa = new int[0] { };
-            //{ 1, -2, 2 };
-            sere.Struct = new TestSeriale.Sta() { a = 3, As = new int[2] { 2, 3 }, keyValuePairs = new Dictionary<int, int[]>() { { 1, new int[] { 1, 3, 2 } } } };
-            sere.floats = new float[3] { -1.1f, 2f, 3f };
-            var sbb = new Serializable();
-            sere.Serialization(sbb);
-            var value = int.MaxValue;
-            var count = 0;
-            //while (value > 127)
-            //{
-            //    //buffer[count] = (byte)((value & 0x7F | 0x80));
-            //    value >>= 7;
-            //    //count++;
-            //}
-
-            //File.WriteAllBytes("F:\\F2\\TestProject1\\11.txt", sbb.bytes);
-
-            //var readc = File.ReadAllBytes("F:\\F2\\TestProject1\\11.txt");
-            //sere.Serialization(sbb);
-            var d = new TestSeriale();
-            d.Deserialization(new Serializable() { Bytes = sbb.Bytes });
-            //var d = new ByteStream();
-            //d.Push(-1);
-            //var d2 = new ByteStream(d.Span);
-            //var qqq = d2.Read<int>();
-            //d.Push(2);
-            //d.Push<string>("3");
-            //d.Push(true);
-            //d.Push(new int[] { 1, 3 });.
-            //d.Push(new long[] { 4, 2 });
-            //d.Read<int>();
-
-            //var a = new ByteStream(d.Span);
-            //var intS = a.Read();
-            //var longS = a.ReadArray<long>();
-            //byte[] buffer = d;
-
-            //var intValue = a.Read<double>();
-            //var intValue2 = a.Read<int>();
-            //bool stirngValue = a.Read<bool>();
-            //Console.WriteLine(intValue);
-            //Console.WriteLine(stirngValue);
-            //var dd = F.StringExtension.Span(new int[1] { 1 });
-            //Console.WriteLine(sp);
-            //BinaryWriter
-            //C = sp[0];
+            var testSere = new TestSeriale();
+            testSere.StringA = "°¡°¡";
+            testSere.Strings = new string[] { };
+            testSere.Inta = 9999999;
+            testSere.Enum = TestSeriale.bb.b;
+            testSere.Intsa = new int[0] { };
+            testSere.Struct = new TestSeriale.Sta() { a = 3, As = new int[2] { 2, 3 }, keyValuePairs = new Dictionary<int, int[]>() { { 1, new int[] { 1, 3, 2 } } } };
+            testSere.floats = new float[3] { -1.1f, 2f, 3f };
+            testSere.Int2Array = new int[2][] { new int[] { 1, 2, 3 }, new int[] { 3, 4, 5 } };
+            testSere.String2Array = new string[2][] { new string[] { "ÖĞ¹úºº×Ö°¡1231,af" }, new string[] { "²âÊÔÖĞ" } };
+            var serializable = new Serializable();
+            testSere.Serialization(serializable);
+            var doSerializable = new TestSeriale();
+            doSerializable.Deserialization(new Serializable(serializable.Bytes));
         }
     }
 }
