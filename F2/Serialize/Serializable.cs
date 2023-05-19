@@ -209,6 +209,9 @@ namespace F
             }
         }
 
+
+
+        #region push
         public void Push<T>(T v) where T : unmanaged
         {
             var span = GetSpan();
@@ -239,6 +242,21 @@ namespace F
             mPosition += span.Position - mPosition;
             Bytes = span;
         }
+        public void Push<T>(T[][] v) where T : unmanaged
+        {
+            var span = GetSpan();
+            span.Push(v);
+            mPosition += span.Position - mPosition;
+            Bytes = span;
+        }
+        public void Push(string[][] v)
+        {
+            var span = GetSpan();
+            span.Push(v);
+            mPosition += span.Position - mPosition;
+            Bytes = span;
+        }
+        #endregion  
 
         //public void Push<T>(List<T> v) where T : unmanaged
         //{
@@ -350,7 +368,30 @@ namespace F
             v = ReadArray();
         }
 
+        public T[][] ReadArray2<T>() where T : unmanaged
+        {
+            var span = GetSpan();
+            var v = span.ReadArray2<T>();
+            mPosition += span.Position - mPosition;
+            return v;
+        }
+        public string[][] ReadArray2()
+        {
+            var span = GetSpan();
+            var v = span.ReadArray2();
+            mPosition += span.Position - mPosition;
+            return v;
+        }
 
+        public void Read<T>(ref T[][] v) where T : unmanaged
+        {
+            v = ReadArray2<T>();
+        }
+
+        public void Read(ref string[][] v)
+        {
+            v = ReadArray2();
+        }
         //public void Read<T>(ref List<T> v) where T : unmanaged
         //{
         //}

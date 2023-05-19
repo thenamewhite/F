@@ -62,17 +62,17 @@ namespace F
         /// <summary>
         /// 基础类型
         /// </summary>
-        public unsafe void Push<T>(in T v) where T : unmanaged
+        public void Push<T>(in T v) where T : unmanaged
         {
             //TODO没走压缩数据大小的，获取了类型字节长度直接write,后续在看是否压缩字节
-            var length = sizeof(T);
-            TrySetBuffLength(length);
-            Span<byte> span = stackalloc byte[length];
+            var size = Unsafe.SizeOf<T>();
+            TrySetBuffLength(size);
+            Span<byte> span = stackalloc byte[size];
             Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v);
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)length);
-            Position += length;
+            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)size);
+            Position += size;
         }
-        public unsafe void Push(string v, Encoding encoding = null)
+        public void Push(string v, Encoding encoding = null)
         {
             var bytes = (encoding ?? Encoding.UTF8).GetBytes(v);
             int length = bytes.Length;
@@ -82,7 +82,7 @@ namespace F
             Position += length;
         }
 
-        public unsafe void Push<T>(T[] v) where T : unmanaged
+        public void Push<T>(T[] v) where T : unmanaged
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
@@ -99,7 +99,7 @@ namespace F
             {
                 if (length > 0)
                 {
-                    var size = sizeof(T);
+                    var size = Unsafe.SizeOf<T>();
                     var byteLength = size * length;
                     TrySetBuffLength(byteLength);
                     for (int i = 0; i < v.Length; i++)
@@ -107,24 +107,12 @@ namespace F
                         Span<byte> span = stackalloc byte[size];
                         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v[i]);
                         Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)span.Length);
+                        Position += size;
                     }
-                    Position += byteLength;
-                    //byte[] bytArr = new byte[sizeof(T) * length];
-                    //fixed (T* pInt = v)
-                    //{
-                    //    byte* pByte = (byte*)pInt;
-                    //    for (int i = 0; i < bytArr.Length; i++)
-                    //    {
-                    //        bytArr[i] = pByte[i];
-                    //    }
-                    //}
-                    //TrySetBuffLength(bytArr.Length);
-                    //Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytArr[0], (uint)bytArr.Length);
-                    //Position += bytArr.Length;
                 }
             }
         }
-        public unsafe void Push(string[] v)
+        public void Push(string[] v)
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
@@ -136,7 +124,7 @@ namespace F
                 }
             }
         }
-        public unsafe void Push<T>(T[][] v) where T : unmanaged
+        public void Push<T>(T[][] v) where T : unmanaged
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
@@ -145,7 +133,7 @@ namespace F
                 Push(v[i]);
             }
         }
-        public unsafe void Push(string[][] v)
+        public void Push(string[][] v)
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
@@ -155,7 +143,7 @@ namespace F
             }
         }
 
-        public unsafe void PushLength(long value)
+        public void PushLength(long value)
         {
             Span<byte> buffer = stackalloc byte[8];
             // WriteRawVarint64
@@ -205,25 +193,22 @@ namespace F
             return (int)result;
         }
 
-        public unsafe ref T Read<T>() where T : unmanaged
+        public T Read<T>() where T : unmanaged
         {
             ref var result = ref Unsafe.As<byte, T>(ref mBuffer[Position]);
-            Position += sizeof(T);
-            return ref result;
+            Position += Unsafe.SizeOf<T>();
+            return result;
         }
-        public unsafe string Read()
+        public string Read()
         {
-            var count = ReadLength();
-            if (count == 0) return string.Empty;
-            fixed (byte* bptr = mBuffer)
-            {
-                var str = Encoding.UTF8.GetString(bptr + Position, count);
-                Position += count;
-                return str;
-            }
+            var length = ReadLength();
+            if (length == 0) return string.Empty;
+            var str = Encoding.UTF8.GetString(mBuffer.ToArray(), Position, length);
+            Position += length;
+            return str;
         }
 
-        public unsafe T[] ReadArray<T>() where T : unmanaged
+        public T[] ReadArray<T>() where T : unmanaged
         {
             var array = ReadAarrayLength<T>();
             var index = 0;
@@ -234,14 +219,14 @@ namespace F
             return array;
         }
 
-        public unsafe string[] ReadArray()
+        public string[] ReadArray()
         {
             var length = ReadLength();
             var array = length == 0 ? Array.Empty<string>() : new string[1] { Read() };
             return array;
         }
 
-        public unsafe T[][] ReadArray2<T>() where T : unmanaged
+        public T[][] ReadArray2<T>() where T : unmanaged
         {
             var length = ReadLength();
             var array = new T[length][];
@@ -252,7 +237,7 @@ namespace F
             return array;
         }
 
-        public unsafe string[][] ReadArray2()
+        public string[][] ReadArray2()
         {
             var length = ReadLength();
             var array = new string[length][];
