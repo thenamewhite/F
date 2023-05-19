@@ -30,7 +30,7 @@ namespace F
             mStack.Clear();
         }
 
-        public T GetObj()
+        public T New()
         {
             T obj;
             if (mStack.Count == 0)
