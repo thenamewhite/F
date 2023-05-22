@@ -23,6 +23,15 @@ namespace TestProject1
             testSere.Serialization(serializable);
             var doSerializable = new TestSeriale();
             doSerializable.Deserialization(new Serializable(serializable.Bytes));
+
+            var path = "F:\\F2\\TestProject1\\11.txt";
+
+            var dict = new Dictionary<int, byte[]>();
+            dict.Add(1, serializable.Bytes);
+            dict.Add(2, serializable.Bytes);
+            FileIO.WriteBase64(path, dict);
+            var d = FileIO.ReadBase64Dict<TestSeriale>(File.ReadAllLines(path));
+
         }
     }
 }

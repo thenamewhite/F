@@ -22,13 +22,13 @@ namespace F
         public void Deserialization(Serializable serializable);
     }
 
-    public class Serializable
+    public class Serializable : IDisposable
     {
         public byte[] Bytes = Array.Empty<byte>();
-        private int mPosition;
+        public int Position;
         public ByteStream GetSpan()
         {
-            return new ByteStream(Bytes) { Position = mPosition };
+            return new ByteStream(Bytes) { Position = Position };
         }
         public Serializable(byte[] bytes)
         {
@@ -216,14 +216,14 @@ namespace F
         {
             var span = GetSpan();
             span.Push(v);
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             Bytes = span;
         }
         public void Push(string v)
         {
             var span = GetSpan();
             span.Push(v);
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             Bytes = span;
         }
 
@@ -231,7 +231,7 @@ namespace F
         {
             var span = GetSpan();
             span.Push(v);
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             Bytes = span;
         }
 
@@ -239,21 +239,21 @@ namespace F
         {
             var span = GetSpan();
             span.Push(v);
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             Bytes = span;
         }
         public void Push<T>(T[][] v) where T : unmanaged
         {
             var span = GetSpan();
             span.Push(v);
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             Bytes = span;
         }
         public void Push(string[][] v)
         {
             var span = GetSpan();
             span.Push(v);
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             Bytes = span;
         }
         #endregion  
@@ -322,7 +322,7 @@ namespace F
         {
             var span = GetSpan();
             var v = span.Read<T>();
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             return v;
         }
 
@@ -330,7 +330,7 @@ namespace F
         {
             var span = GetSpan();
             var v = span.Read();
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             return v;
         }
 
@@ -338,14 +338,14 @@ namespace F
         {
             var span = GetSpan();
             var v = span.ReadArray<T>();
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             return v;
         }
         public string[] ReadArray()
         {
             var span = GetSpan();
             var v = span.ReadArray();
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             return v;
         }
 
@@ -372,14 +372,14 @@ namespace F
         {
             var span = GetSpan();
             var v = span.ReadArray2<T>();
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             return v;
         }
         public string[][] ReadArray2()
         {
             var span = GetSpan();
             var v = span.ReadArray2();
-            mPosition += span.Position - mPosition;
+            Position += span.Position - Position;
             return v;
         }
 
@@ -392,6 +392,12 @@ namespace F
         {
             v = ReadArray2();
         }
+
+        public void Dispose()
+        {
+            Bytes = null;
+        }
+
         //public void Read<T>(ref List<T> v) where T : unmanaged
         //{
         //}
