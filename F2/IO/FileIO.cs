@@ -23,7 +23,7 @@ namespace F
             var s = File.ReadAllLines(path);
             foreach (var item in s)
             {
-                var bytesValue = item.Split("|");
+                var bytesValue = item.Split('|');
                 if (bytesValue[0] == id.ToString())
                 {
                     return Convert.FromBase64String(bytesValue[1]);
@@ -38,7 +38,7 @@ namespace F
             var se = new Serializable();
             foreach (var item in s)
             {
-                var bytesValue = item.Split("|");
+                var bytesValue = item.Split('|');
                 if (bytesValue[0] == id.ToString())
                 {
                     var toClass = InstanceT.CreateInstance<T>();
@@ -49,13 +49,13 @@ namespace F
             throw new Exception($"ReadBase64 not found Id:{id}");
         }
 
-        public static Dictionary<int, T> ReadBase64Dict<T>(string[] strings) where T : IFSerializable
+        public static Dictionary<int, T> ReadBase64Dict<T>(string[] values) where T : IFSerializable
         {
-            var dict = new Dictionary<int, T>();
+            var dict = new Dictionary<int, T>(values.Length);
             var se = new Serializable();
-            foreach (var item in strings)
+            foreach (var item in values)
             {
-                var bytesValue = item.Split("|");
+                var bytesValue = item.Split('|');
                 var toClass = InstanceT.CreateInstance<T>();
                 se.Bytes = Convert.FromBase64String(bytesValue[1]);
                 se.Position = 0;

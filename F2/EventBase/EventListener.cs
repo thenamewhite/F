@@ -71,11 +71,11 @@ namespace F
                 var count = data.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
+                    data[i].Action(ref param);
                     if (i >= data.Count)
                     {
                         continue;
                     }
-                    data[i].Action(ref param);
                     if (data[i].IsOnce)
                     {
                         data.RemoveAt(i);

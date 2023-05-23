@@ -14,12 +14,12 @@ namespace F
         /// </summary>
         /// <param name="serializable"></param>
 
-        public void Serialization(Serializable serializable);
+        void Serialization(Serializable serializable);
 
         /// <summary>
         /// 
         /// </summary>
-        public void Deserialization(Serializable serializable);
+        void Deserialization(Serializable serializable);
     }
 
     public class Serializable : IDisposable
@@ -154,62 +154,61 @@ namespace F
 
             SetFiledValue(sapn, v);
 
-            void SetFiledValue(ByteStream stream, object v)
+        }
+
+        private void SetFiledValue(ByteStream stream, object v)
+        {
+            var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            foreach (var item in fildes)
             {
-                var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                foreach (var item in fildes)
+                var type = item.FieldType;
+                if (type == typeof(int))
                 {
-                    var type = item.FieldType;
-                    if (type == typeof(int))
+                    item.SetValue(v, stream.Read<int>());
+                }
+                else if (type.IsEnum)
+                {
+                    Type t = Enum.GetUnderlyingType(type);
+                    //var d = readV.Read<uint>();
+                    object eV = default;
+                    switch (Type.GetTypeCode(t))
                     {
-                        item.SetValue(v, stream.Read<int>());
+                        case TypeCode.SByte:
+                        case TypeCode.Byte: eV = Enum.ToObject(type.GetElementType(), stream.Read<byte>()); break;
+                        case TypeCode.Int16:
+                        case TypeCode.UInt16: eV = Enum.ToObject(type, stream.Read<int>()); break;
+                        case TypeCode.Int32:
+                        case TypeCode.UInt32: eV = Enum.ToObject(type, stream.Read<uint>()); break;
+                        case TypeCode.Int64:
+                        case TypeCode.UInt64: eV = Enum.ToObject(type, stream.Read<ulong>()); break;
                     }
-                    else if (type.IsEnum)
-                    {
-                        Type t = Enum.GetUnderlyingType(type);
-                        //var d = readV.Read<uint>();
-                        object eV = default;
-                        switch (Type.GetTypeCode(t))
-                        {
-                            case TypeCode.SByte:
-                            case TypeCode.Byte: eV = Enum.ToObject(type.GetElementType(), stream.Read<byte>()); break;
-                            case TypeCode.Int16:
-                            case TypeCode.UInt16: eV = Enum.ToObject(type, stream.Read<int>()); break;
-                            case TypeCode.Int32:
-                            case TypeCode.UInt32: eV = Enum.ToObject(type, stream.Read<uint>()); break;
-                            case TypeCode.Int64:
-                            case TypeCode.UInt64: eV = Enum.ToObject(type, stream.Read<ulong>()); break;
-                        }
-                        item.SetValue(v, eV);
-                    }
-                    else if (type == typeof(string))
-                    {
-                        item.SetValue(v, stream.Read());
-                    }
-                    else if (type == typeof(int[]))
-                    {
-                        item.SetValue(v, stream.ReadArray<int>());
-                    }
-                    else if (type == typeof(float[]))
-                    {
-                        item.SetValue(v, stream.ReadArray<float>());
-                    }
-                    else if (type == typeof(string[]))
-                    {
-                        item.SetValue(v, stream.ReadArray());
-                    }
-                    else if (type.IsValueType)
-                    {
-                        //创建结构体
-                        var d = Activator.CreateInstance(type);
-                        SetFiledValue(stream, d);
-                        item.SetValue(v, d);
-                    }
+                    item.SetValue(v, eV);
+                }
+                else if (type == typeof(string))
+                {
+                    item.SetValue(v, stream.Read());
+                }
+                else if (type == typeof(int[]))
+                {
+                    item.SetValue(v, stream.ReadArray<int>());
+                }
+                else if (type == typeof(float[]))
+                {
+                    item.SetValue(v, stream.ReadArray<float>());
+                }
+                else if (type == typeof(string[]))
+                {
+                    item.SetValue(v, stream.ReadArray());
+                }
+                else if (type.IsValueType)
+                {
+                    //创建结构体
+                    var d = Activator.CreateInstance(type);
+                    SetFiledValue(stream, d);
+                    item.SetValue(v, d);
                 }
             }
         }
-
-
 
         #region push
         public void Push<T>(T v) where T : unmanaged
