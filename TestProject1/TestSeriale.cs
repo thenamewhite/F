@@ -5,11 +5,12 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using F;
+using static TestProject1.TestSeriale;
 
 // author  (hf) Date：2023/5/8 17:26:08
 namespace TestProject1
 {
-    public class TestSeriale : EventListener, IFSerializable
+    public partial class TestSeriale : EventListener, IFSerializable
     {
 
         public string[] Strings;
@@ -43,6 +44,16 @@ namespace TestProject1
             new Dictionary<string, Sta[]>() { { "2323", new Sta[] { new Sta() { a = 11232 } } } };
         public Sta[] Sata = new Sta[] { new Sta { As = new int[] { 1 } } };
 
+        //public void Deserialization(Serializable serializable)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void Serialization(Serializable serializable)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
         public enum bb
         {
             a = 3,
@@ -71,7 +82,13 @@ namespace TestProject1
                 serializable.Push(As);
             }
         }
+    }
 
+    /// <summary>
+    /// 合并类，这个类，后面改成扫描生成
+    /// </summary>
+    public partial class TestSeriale
+    {
         public void Deserialization(Serializable serialize)
         {
             serialize.Read(ref keyValuePairs);
@@ -86,11 +103,11 @@ namespace TestProject1
             serialize.Read(ref Strings);
             serialize.Read(ref Int2Array);
             serialize.Read(ref String2Array);
-            serialize.ReadSerializables(ref Struct);
-            serialize.ReadSerializables(ref Sata);
-            serialize.ReadSerializables(ref keyValuePairsIFSerializable12);
-            serialize.ReadSerializables(ref keyValuePairsIFSerializable1);
-            serialize.ReadSerializables(ref keyValuePairsIFSerializable);
+            serialize.ReadSerializable(ref Struct);
+            serialize.ReadSerializable(ref Sata);
+            serialize.ReadSerializable(ref keyValuePairsIFSerializable12);
+            serialize.ReadSerializable(ref keyValuePairsIFSerializable1);
+            serialize.ReadSerializable(ref keyValuePairsIFSerializable);
         }
 
         public void Serialization(Serializable serialize)
@@ -107,12 +124,12 @@ namespace TestProject1
             serialize.Push(Strings);
             serialize.Push(Int2Array);
             serialize.Push(String2Array);
-            serialize.PushSerializables(Struct);
-            serialize.PushSerializables(Sata);
-            serialize.PushSerializables(keyValuePairsIFSerializable12);
-            serialize.PushSerializables(keyValuePairsIFSerializable1);
-            serialize.PushSerializables(keyValuePairsIFSerializable);
+            serialize.PushSerializable(Struct);
+            serialize.PushSerializable(Sata);
+            serialize.PushSerializable(keyValuePairsIFSerializable12);
+            serialize.PushSerializable(keyValuePairsIFSerializable1);
+            serialize.PushSerializable(keyValuePairsIFSerializable);
         }
-
     }
+
 }

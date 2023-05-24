@@ -388,14 +388,14 @@ namespace F
                 }
         }
 
-        public void PushSerializables<T>(T[] v) where T : IFSerializable
+        public void PushSerializable<T>(T[] v) where T : IFSerializable
         {
             var length = (v?.Length).GetValueOrDefault();
             Push(length);
             if (length > 0)
                 foreach (var item in v)
                 {
-                    PushSerializables(item);
+                    PushSerializable(item);
                 }
         }
         public void PushSerializables<T1>(T1[][] v) where T1 : IFSerializable
@@ -408,12 +408,12 @@ namespace F
                     Push(serializables.Length);
                     foreach (var serializable in serializables)
                     {
-                        PushSerializables(serializable);
+                        PushSerializable(serializable);
                     }
                 }
         }
 
-        public void PushSerializables<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
+        public void PushSerializable<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = (v?.Count).GetValueOrDefault();
             Push(count);
@@ -421,10 +421,10 @@ namespace F
                 foreach (var item in v)
                 {
                     Push(item.Key);
-                    PushSerializables(item.Value);
+                    PushSerializable(item.Value);
                 }
         }
-        public void PushSerializables<T, T1>(Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
+        public void PushSerializable<T, T1>(Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = (v?.Count).GetValueOrDefault();
             Push(count);
@@ -435,7 +435,7 @@ namespace F
                     Push(item.Value.Length);
                     foreach (var serializable in item.Value)
                     {
-                        PushSerializables(serializable);
+                        PushSerializable(serializable);
                     }
                 }
         }
@@ -454,7 +454,7 @@ namespace F
         //            }
         //        }
         //}
-     
+
         //public void PushSerializables<T, T1>(Dictionary<T, IFSerializable[][]> v) where T : unmanaged where T1 : IFSerializable
         //{
         //    Push(v.Count);
@@ -471,7 +471,7 @@ namespace F
         //    }
         //}
 
-        public void PushSerializables<T1>(Dictionary<string, T1[]> v) where T1 : IFSerializable
+        public void PushSerializable<T1>(Dictionary<string, T1[]> v) where T1 : IFSerializable
         {
             Push(v.Count);
             foreach (var item in v)
@@ -480,12 +480,12 @@ namespace F
                 Push(item.Value.Length);
                 foreach (var serializable in item.Value)
                 {
-                    PushSerializables(serializable);
+                    PushSerializable(serializable);
                 }
             }
         }
 
-        public void PushSerializables<T>(T v) where T : IFSerializable
+        public void PushSerializable<T>(T v) where T : IFSerializable
         {
             v.Serialization(this);
         }
@@ -522,13 +522,13 @@ namespace F
                     break;
             }
         }
-        public void ReadSerializables<T>(ref T v) where T : IFSerializable
+        public void ReadSerializable<T>(ref T v) where T : IFSerializable
         {
             v.Deserialization(this);
         }
 
 
-        public void ReadSerializables<T>(ref T[] v) where T : IFSerializable
+        public void ReadSerializable<T>(ref T[] v) where T : IFSerializable
         {
             var length = Read<int>();
             v = new T[length];
@@ -540,7 +540,7 @@ namespace F
             }
         }
 
-        public void ReadSerializables<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
+        public void ReadSerializable<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = Read<int>();
             var d = new Dictionary<T, T1>();
@@ -553,7 +553,7 @@ namespace F
                 count--;
             }
         }
-        public void ReadSerializables<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
+        public void ReadSerializable<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = Read<int>();
             var d = new Dictionary<T, T1[]>();
@@ -572,7 +572,7 @@ namespace F
                 count--;
             }
         }
-        public void ReadSerializables<T1>(ref Dictionary<string, T1[]> v) where T1 : IFSerializable
+        public void ReadSerializable<T1>(ref Dictionary<string, T1[]> v) where T1 : IFSerializable
         {
             var count = Read<int>();
             var d = new Dictionary<string, T1[]>();
