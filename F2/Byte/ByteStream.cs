@@ -116,12 +116,9 @@ namespace F
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
-            if (length > 0)
+            for (int i = 0; i < v.Length; i++)
             {
-                for (int i = 0; i < v.Length; i++)
-                {
-                    Push(v[i]);
-                }
+                Push(v[i]);
             }
         }
         public void Push<T>(T[][] v) where T : unmanaged
@@ -221,8 +218,11 @@ namespace F
 
         public string[] ReadArray()
         {
-            var length = ReadLength();
-            var array = length == 0 ? Array.Empty<string>() : new string[1] { Read() };
+            var array = ReadAarrayLength<string>();
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = Read();
+            }
             return array;
         }
 
@@ -249,20 +249,11 @@ namespace F
         }
 
 
-        //public unsafe List<string> ReadArray<T>()
-        //{
-        //    var length = ReadLength();
-        //    var array = length == 0 ? new List<string>() : new List<string> { Read() };
-        //    return array;
-        //}
-
-
         private T[] ReadAarrayLength<T>()
         {
             var length = ReadLength();
             return length == 0 ? Array.Empty<T>() : new T[length];
         }
-
 
         public void TrySetBuffLength(int newSize)
         {

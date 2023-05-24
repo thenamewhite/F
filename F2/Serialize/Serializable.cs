@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Drawing;
 
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
@@ -255,22 +253,242 @@ namespace F
             Position += span.Position - Position;
             Bytes = span;
         }
-        #endregion  
+        #endregion
+        #region  Dictionary
+        public void Push<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T, T1>(Dictionary<T, T1[]> v) where T : unmanaged where T1 : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T, T1>(Dictionary<T, T1[][]> v) where T : unmanaged where T1 : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T>(Dictionary<T, string> v) where T : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T>(Dictionary<T, string[]> v) where T : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T>(Dictionary<T, string[][]> v) where T : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T1>(Dictionary<string, T1> v) where T1 : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push(Dictionary<string, string> v)
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push(Dictionary<string, string[]> v)
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T>(Dictionary<string, T[]> v) where T : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push<T>(Dictionary<string, T[][]> v) where T : unmanaged
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
+        public void Push(Dictionary<string, string[][]> v)
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value);
+                }
+        }
 
-        //public void Push<T>(List<T> v) where T : unmanaged
+        public void PushSerializables<T>(T[] v) where T : IFSerializable
+        {
+            var length = (v?.Length).GetValueOrDefault();
+            Push(length);
+            if (length > 0)
+                foreach (var item in v)
+                {
+                    PushSerializables(item);
+                }
+        }
+        public void PushSerializables<T1>(T1[][] v) where T1 : IFSerializable
+        {
+            var length = (v?.Length).GetValueOrDefault();
+            Push(length);
+            if (length > 0)
+                foreach (var serializables in v)
+                {
+                    Push(serializables.Length);
+                    foreach (var serializable in serializables)
+                    {
+                        PushSerializables(serializable);
+                    }
+                }
+        }
+
+        public void PushSerializables<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    PushSerializables(item.Value);
+                }
+        }
+        public void PushSerializables<T, T1>(Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    Push(item.Value.Length);
+                    foreach (var serializable in item.Value)
+                    {
+                        PushSerializables(serializable);
+                    }
+                }
+        }
+        //private void Push(Dictionary<object, object[]> v)
         //{
-        //    var span = GetSapn();
-        //    span.Push(v);
-        //    mPosition += span.Position - mPosition;
-        //    bytes = span;
+        //    var count = (v?.Count).GetValueOrDefault();
+        //    Push(count);
+        //    if (count > 0)
+        //        foreach (var item in v)
+        //        {
+        //            Push(item.Key);
+        //            Push(item.Value.Length);
+        //            foreach (var serializable in item.Value)
+        //            {
+        //                PushSerializables(serializable);
+        //            }
+        //        }
         //}
-        //public void Push(List<string> v)
+     
+        //public void PushSerializables<T, T1>(Dictionary<T, IFSerializable[][]> v) where T : unmanaged where T1 : IFSerializable
         //{
-        //    var span = GetSapn();
-        //    span.Push(v);
-        //    mPosition += span.Position - mPosition;
-        //    bytes = span;
+        //    Push(v.Count);
+        //    foreach (var item in v)
+        //    {
+        //        Push(item.Key);
+        //        foreach (var serializables in item.Value)
+        //        {
+        //            foreach (var serializable in serializables)
+        //            {
+        //                PushSerializables(serializable);
+        //            }
+        //        }
+        //    }
         //}
+
+        public void PushSerializables<T1>(Dictionary<string, T1[]> v) where T1 : IFSerializable
+        {
+            Push(v.Count);
+            foreach (var item in v)
+            {
+                Push(item.Key);
+                Push(item.Value.Length);
+                foreach (var serializable in item.Value)
+                {
+                    PushSerializables(serializable);
+                }
+            }
+        }
+
+        public void PushSerializables<T>(T v) where T : IFSerializable
+        {
+            v.Serialization(this);
+        }
 
         private void Read(object obj)
         {
@@ -304,18 +522,75 @@ namespace F
                     break;
             }
         }
-
-
-
         public void ReadSerializables<T>(ref T v) where T : IFSerializable
         {
             v.Deserialization(this);
         }
-        public void PushSerializables<T>(T v) where T : IFSerializable
+
+
+        public void ReadSerializables<T>(ref T[] v) where T : IFSerializable
         {
-            v.Serialization(this);
+            var length = Read<int>();
+            v = new T[length];
+            for (int i = 0; i < length; i++)
+            {
+                var toClass = InstanceT.CreateInstance<T>();
+                toClass.Deserialization(this);
+                v[i] = toClass;
+            }
         }
 
+        public void ReadSerializables<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
+        {
+            var count = Read<int>();
+            var d = new Dictionary<T, T1>();
+            while (count > 0)
+            {
+                var se = InstanceT.CreateInstance<T1>();
+                var key = Read<T>();
+                se.Deserialization(this);
+                d.Add(key, se);
+                count--;
+            }
+        }
+        public void ReadSerializables<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
+        {
+            var count = Read<int>();
+            var d = new Dictionary<T, T1[]>();
+            while (count > 0)
+            {
+                var key = Read<T>();
+                var valuesCount = Read<int>();
+                var c = new T1[valuesCount];
+                for (int i = 0; i < valuesCount; i++)
+                {
+                    var se = InstanceT.CreateInstance<T1>();
+                    se.Deserialization(this);
+                    c[i] = se;
+                }
+                d.Add(key, c);
+                count--;
+            }
+        }
+        public void ReadSerializables<T1>(ref Dictionary<string, T1[]> v) where T1 : IFSerializable
+        {
+            var count = Read<int>();
+            var d = new Dictionary<string, T1[]>();
+            while (count > 0)
+            {
+                var key = Read();
+                var valuesCount = Read<int>();
+                var c = new T1[valuesCount];
+                for (int i = 0; i < valuesCount; i++)
+                {
+                    var se = InstanceT.CreateInstance<T1>();
+                    se.Deserialization(this);
+                    c[i] = se;
+                }
+                d.Add(key, c);
+                count--;
+            }
+        }
 
         public T Read<T>() where T : unmanaged
         {
@@ -397,14 +672,100 @@ namespace F
             Bytes = null;
         }
 
-        //public void Read<T>(ref List<T> v) where T : unmanaged
-        //{
-        //}
-        //public void Read(ref List<string> v)
-        //{
-        //    var span = GetSapn();
-        //    v = span.ReadArray();
-        //    mPosition += span.Position - mPosition;
-        //}
+        public void Read<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<T, T1>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read<T>(), Read<T1>());
+            }
+        }
+        public void Read<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<T, T1[]>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read<T>(), ReadArray<T1>());
+            }
+        }
+        public void Read<T, T1>(ref Dictionary<T, T1[][]> v) where T : unmanaged where T1 : unmanaged
+        {
+
+        }
+        public void Read<T, T1>(ref Dictionary<T, string> v) where T : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<T, string>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read<T>(), Read());
+            }
+        }
+        public void Read<T>(ref Dictionary<T, string[]> v) where T : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<T, string[]>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read<T>(), ReadArray());
+            }
+        }
+        public void Read<T>(ref Dictionary<T, string[][]> v) where T : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<T, string[][]>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read<T>(), ReadArray2());
+            }
+        }
+        public void Read(ref Dictionary<string, string> v)
+        {
+            var count = Read<int>();
+            v = new Dictionary<string, string>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read(), Read());
+            }
+        }
+        public void Read(ref Dictionary<string, string[]> v)
+        {
+            var count = Read<int>();
+            v = new Dictionary<string, string[]>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read(), ReadArray());
+            }
+        }
+        public void Read(ref Dictionary<string, string[][]> v)
+        {
+            var count = Read<int>();
+            v = new Dictionary<string, string[][]>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read(), ReadArray2());
+            }
+        }
+        public void Read<T>(ref Dictionary<string, T[][]> v) where T : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<string, T[][]>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read(), ReadArray2<T>());
+            }
+        }
+        public void Read<T1>(ref Dictionary<string, T1> v) where T1 : unmanaged
+        {
+            var count = Read<int>();
+            v = new Dictionary<string, T1>(count);
+            for (int i = 0; i < count; i++)
+            {
+                v.Add(Read(), Read<T1>());
+            }
+        }
+        #endregion
     }
 }
