@@ -285,6 +285,7 @@ namespace F
 
         public void CopyFrom(byte[] from, int fromIndex, int size)
         {
+            TrySetBuffLength(size);
             Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref from[fromIndex], (uint)size);
             Position += size;
         }
