@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Text.Json;
+using static F.EventListener;
 
 namespace TestProject1
 {
@@ -27,12 +28,38 @@ namespace TestProject1
             var doSerializable = new TestSeriale();
             doSerializable.Deserialization(new Serializable(serializable.Bytes));
 
-            testSere.AddEvent<int>(fun, 0, true);
-            var c = 1;
-            testSere.DispatchEvent<int>(ref c);
-            void fun(ref int t)
+            testSere.AddEvent<float>(fun, 0, true);
+            testSere.AddEvent<float>((ref Event<float> a) => { }, 8, true);
+            testSere.AddEvent<float>((ref Event<float> a) =>
             {
-                testSere.RemoveEvent<int>(fun);
+
+            }, 9, true);
+            testSere.AddEvent<float>((ref Event<float> a) =>
+            {
+
+            }, 7, true);
+            testSere.AddEvent<float>((ref Event<float> a) =>
+            {
+
+            }, 7100, true);
+            testSere.AddEvent<float>((ref Event<float> a) =>
+            {
+
+            }, -9000, true);
+            testSere.AddEvent<float>((ref Event<float> a) =>
+            {
+
+            }, -800, true);
+
+            float c = 1;
+            testSere.DispatchEvent<float>(ref c);
+            void fun(ref Event<float> t)
+            {
+                var ddd = t.Value;
+                t.IsBreak = true;
+                //t.Action = null;
+                //t = new Event<float>();
+                //testSere.RemoveEvent<float>(fun);
             }
             var path = "F:\\F2\\TestProject1\\11.txt";
             var dict = new Dictionary<int, byte[]>();

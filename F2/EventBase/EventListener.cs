@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System;
+using static F.EventListener;
 // author  (hf) time：2023/2/16 10:38:20
 namespace F
 {
@@ -11,42 +12,76 @@ namespace F
         private interface IList
         {
         }
-        private struct EventT<T>
-        {
-            public int Level;
-            public bool IsOnce;
-            public ActionRef<T> Action;
-        }
         private struct ListActionT<T> : IList
         {
-            public List<EventT<T>> ListActions;
+            public List<Event<T>> ListActions;
         }
 
         public delegate void ActionRef<T1>(ref T1 arg1);
 
-        //public unsafe delegate* managed  ActionRef<T1>(ref T1 arg1);
+        public struct Event<T>
+        {
+            public T Value;
+            /// <summary>
+            /// 是否退出后续触发
+            /// </summary>
+            public bool IsBreak;
+            public readonly int Level;
+            public readonly bool IsOnce;
+            public readonly ActionRef<Event<T>> Action;
+
+            public Event(bool isBreak, int level, bool isOnce, ActionRef<Event<T>> action)
+            {
+                this.IsBreak = isBreak;
+                this.Level = level;
+                this.IsOnce = isOnce;
+                this.Action = action;
+                this.Value = default;
+            }
+        }
 
         private Dictionary<Type, IList> mKeyValuePairs = new Dictionary<Type, IList>();
 
+
         /// <summary>
+        /// 相同函数，相同类型只能注入一个
         /// </summary>
         /// <param name="type"></param>
         /// <param name="level"></param>
         /// <param name="isOnce"></param>
-        public void AddEvent<T>(ActionRef<T> action, int level = 0, bool isOnce = false)
+        public void AddEvent<T>(ActionRef<Event<T>> action, int level = 0, bool isOnce = false)
         {
             var type = typeof(T);
             mKeyValuePairs.TryGetValue(type, out var t);
             if (t == null)
             {
-                t = new ListActionT<T>() { ListActions = new List<EventT<T>>() { } };
+                t = new ListActionT<T>() { ListActions = new List<Event<T>>() { } };
                 mKeyValuePairs.Add(type, t);
             }
             var listAction = (ListActionT<T>)t;
-            listAction.ListActions.Add(new EventT<T>() { Action = action, Level = level, IsOnce = isOnce });
+            foreach (var item in listAction.ListActions)
+            {
+                if (item.Action == action)
+                {
+                    return;
+                }
+            }
+            var eventT = new Event<T>(false, level, isOnce, action);
+            var eventCount = listAction.ListActions.Count;
+            //按照level 优先级排序
+            for (int i = 0; i < eventCount; i++)
+            {
+                var eventLevel = listAction.ListActions[i].Level;
+                if (level >= eventLevel)
+                {
+                    listAction.ListActions.Insert(i, eventT);
+                    return;
+                }
+            }
+            listAction.ListActions.Add(eventT);
         }
 
-        public void RemoveEvent<T>(ActionRef<T> action)
+        public void RemoveEvent<T>(ActionRef<Event<T>> action)
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))
@@ -71,7 +106,8 @@ namespace F
                 var count = data.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    data[i].Action(ref param);
+                    var d = data[i];
+                    data[i].Action(ref d);
                     if (i >= data.Count)
                     {
                         continue;
@@ -79,6 +115,10 @@ namespace F
                     if (data[i].IsOnce)
                     {
                         data.RemoveAt(i);
+                    }
+                    if (d.IsBreak)
+                    {
+                        break;
                     }
                 }
             }
