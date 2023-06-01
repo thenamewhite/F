@@ -18,10 +18,36 @@ namespace F
                 mAssemblies.Add(assembly);
             }
         }
-
         public static T CreateInstance<T>()
         {
             return Activator.CreateInstance<T>();
+        }
+        public static object CreateInstance(string v)
+        {
+            Type type = default;
+            type = Assembly.GetExecutingAssembly().GetType(v);
+            if (type == null)
+            {
+                foreach (var item in mAssemblies)
+                {
+                    type = item.GetType(v);
+                    if (type != null)
+                    {
+                        break;
+                    }
+                }
+            }
+            var obj = Activator.CreateInstance(type) ?? type;
+            if (obj == null)
+            {
+                throw new Exception($" CreateInstance not fount className:{v}");
+            }
+            return obj;
+        }
+
+        public static object CreateInstance(Func<Type> callBack)
+        {
+            return Activator.CreateInstance(callBack.Invoke());
         }
     }
 }
