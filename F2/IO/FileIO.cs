@@ -8,6 +8,12 @@ namespace F
 {
     public static class FileIO
     {
+
+        public static void WriteBytes(string path, ByteStream byteStream)
+        {
+            File.WriteAllBytes(path, byteStream.Bytes);
+        }
+
         public static void WriteBase64(string path, Dictionary<int, byte[]> v)
         {
             var streamWriter = new StreamWriter(path);
@@ -17,7 +23,7 @@ namespace F
             }
             streamWriter.Close();
         }
-        public static void WriteBytes(string path, Dictionary<int, byte[]> v)
+        public static void WriteBytesDict<Tkey>(string path, Dictionary<Tkey, byte[]> v) where Tkey : unmanaged
         {
             var by = new ByteStream();
             by.Push(v.Count);
@@ -28,7 +34,19 @@ namespace F
             }
             File.WriteAllBytes(path, by.Bytes);
         }
-        public static void WriteBytes(string path, Dictionary<int, Serializable> v)
+        public static void WriteBytesDict(string path, Dictionary<string, byte[]> v)
+        {
+            var by = new ByteStream();
+            by.Push(v.Count);
+            foreach (var item in v)
+            {
+                by.Push(item.Key);
+                by.CopyFrom(item.Value, 0, item.Value.Length);
+            }
+            File.WriteAllBytes(path, by.Bytes);
+        }
+
+        public static void WriteBytesDict(string path, Dictionary<int, Serializable> v)
         {
             var by = new ByteStream();
             by.Push(v.Count);
@@ -40,31 +58,38 @@ namespace F
             File.WriteAllBytes(path, by.Bytes);
         }
 
-        public static byte[] ReadBase64(string path, int id, string values)
+        public static byte[] ReadBytes(string path)
         {
-            var s = File.ReadAllLines(path);
-            foreach (var item in s)
-            {
-                var bytesValue = item.Split('|');
-                if (bytesValue[0] == id.ToString())
-                {
-                    return Convert.FromBase64String(bytesValue[1]);
-                }
-            }
-            throw new Exception($"ReadBase64 not found Id:{id}");
+            return File.ReadAllBytes(path);
         }
 
-        public static Dictionary<int, T> ReadBytesDict<T>(byte[] values) where T : IFSerializable
+
+        public static Dictionary<string, TValue> ReadBytesDict<TValue>(byte[] values) where TValue : IFSerializable
         {
             var se = new Serializable(values);
             var length = se.Read<int>();
-            var dict = new Dictionary<int, T>(length);
+            var dict = new Dictionary<string, TValue>(length);
             while (length > 0)
             {
-                var toClass = InstanceT.CreateInstance<T>();
-                var key = se.Read<int>();
+                var key = se.Read();
+                var toClass = InstanceT.CreateInstance(se.Read()) as IFSerializable;
                 toClass.Deserialization(se);
-                dict.Add(key, toClass);
+                dict.Add(key, (TValue)toClass);
+                length--;
+            }
+            return dict;
+        }
+        public static Dictionary<Tkey, TValue> ReadBytesDict<Tkey, TValue>(byte[] values) where Tkey : unmanaged where TValue : IFSerializable
+        {
+            var se = new Serializable(values);
+            var length = se.Read<int>();
+            var dict = new Dictionary<Tkey, TValue>(length);
+            while (length > 0)
+            {
+                var key = se.Read<Tkey>();
+                var toClass = InstanceT.CreateInstance(se.Read()) as IFSerializable;
+                toClass.Deserialization(se);
+                dict.Add(key, (TValue)toClass);
                 length--;
             }
             return dict;
@@ -101,6 +126,19 @@ namespace F
                 dict.Add(Convert.ToInt16(bytesValue[0]), toClass);
             }
             return dict;
+        }
+        public static byte[] ReadBase64(string path, int id, string values)
+        {
+            var s = File.ReadAllLines(path);
+            foreach (var item in s)
+            {
+                var bytesValue = item.Split('|');
+                if (bytesValue[0] == id.ToString())
+                {
+                    return Convert.FromBase64String(bytesValue[1]);
+                }
+            }
+            throw new Exception($"ReadBase64 not found Id:{id}");
         }
 
     }
