@@ -19,6 +19,8 @@ namespace F
         public int Length;
 
         private Span<byte> mBuffer;
+
+
         //public byte[] mBuffer;
 
         public bool IsEnd
@@ -189,13 +191,42 @@ namespace F
             }
             return (int)result;
         }
-
+        /// <summary>
+        /// 从存入的字节数组中读取指定类型值
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T Read<T>() where T : unmanaged
         {
             ref var result = ref Unsafe.As<byte, T>(ref mBuffer[Position]);
             Position += Unsafe.SizeOf<T>();
             return result;
         }
+
+        /// <summary>
+        /// 根据传入值返回字节数组
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public byte[] Read<T>(T v) where T : unmanaged
+        {
+            var size = Unsafe.SizeOf<T>();
+            Span<byte> span = stackalloc byte[size];
+            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v);
+            return span.ToArray();
+        }
+        /// <summary>
+        /// 根据传入值返回字节数组
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public byte[] Read(string v)
+        {
+            return Encoding.UTF8.GetBytes(v);
+        }
+
         public string Read()
         {
             var length = ReadLength();
