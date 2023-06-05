@@ -22,26 +22,29 @@ namespace F
 
     public class Serializable : IDisposable
     {
-        public byte[] Bytes = Array.Empty<byte>();
+        //public byte[] Bytes = Array.Empty<byte>();
+
+        public  ByteStream Bytes = new ByteStream();
         public int Position;
-        public ByteStream GetSpan()
-        {
-            return new ByteStream(Bytes) { Position = Position };
-        }
+        //public ByteStream GetSpan()
+        //{
+        //    return new ByteStream(Bytes) { Position = Position };
+        //}
         public Serializable(byte[] bytes)
         {
-            Bytes = bytes;
+            Bytes = new ByteStream(bytes);
         }
         public Serializable(Span<byte> bytes)
         {
-            Bytes = bytes.ToArray();
+            Bytes = new ByteStream(bytes);
+            //bytes.ToArray();
         }
         public Serializable()
         {
         }
         public bool IsEnd
         {
-            get => GetSpan().IsEnd;
+            get => Bytes.IsEnd;
         }
 
         public void WriteObjs(object obj)
@@ -148,9 +151,6 @@ namespace F
         public void ReadObjs(object v)
         {
 
-            var sapn = GetSpan();
-
-            SetFiledValue(sapn, v);
 
         }
 
@@ -211,47 +211,59 @@ namespace F
         #region push
         public void Push<T>(T v) where T : unmanaged
         {
-            var span = GetSpan();
-            span.Push(v);
-            Position += span.Position - Position;
-            Bytes = span;
+            //var span = GetSpan();
+            //span.Push(v);
+            //Position += span.Position - Position;
+            //Bytes = span;
+
+            Bytes.Push(v);
         }
         public void Push(string v)
         {
-            var span = GetSpan();
-            span.Push(v);
-            Position += span.Position - Position;
-            Bytes = span;
+            //var span = GetSpan();
+            //span.Push(v);
+            //Position += span.Position - Position;
+            //Bytes = span;
+            Bytes.Push(v);
+
         }
 
         public void Push<T>(T[] v) where T : unmanaged
         {
-            var span = GetSpan();
-            span.Push(v);
-            Position += span.Position - Position;
-            Bytes = span;
+            //var span = GetSpan();
+            //span.Push(v);
+            //Position += span.Position - Position;
+            //Bytes = span;
+            Bytes.Push(v);
+
         }
 
         public void Push(string[] v)
         {
-            var span = GetSpan();
-            span.Push(v);
-            Position += span.Position - Position;
-            Bytes = span;
+            //var span = GetSpan();
+            //span.Push(v);
+            //Position += span.Position - Position;
+            //Bytes = span;
+            Bytes.Push(v);
+
         }
         public void Push<T>(T[][] v) where T : unmanaged
         {
-            var span = GetSpan();
-            span.Push(v);
-            Position += span.Position - Position;
-            Bytes = span;
+            //var span = GetSpan();
+            //span.Push(v);
+            //Position += span.Position - Position;
+            //Bytes = span;
+            Bytes.Push(v);
+
         }
         public void Push(string[][] v)
         {
-            var span = GetSpan();
-            span.Push(v);
-            Position += span.Position - Position;
-            Bytes = span;
+            //var span = GetSpan();
+            //span.Push(v);
+            //Position += span.Position - Position;
+            //Bytes = span;
+            Bytes.Push(v);
+
         }
         #endregion
         #region  Dictionary
@@ -594,33 +606,34 @@ namespace F
 
         public T Read<T>() where T : unmanaged
         {
-            var span = GetSpan();
-            var v = span.Read<T>();
-            Position += span.Position - Position;
-            return v;
+            //var span = GetSpan();
+            //var v = span.Read<T>();
+            //Position += span.Position - Position;
+
+            return Bytes.Read<T>();
         }
 
         public string Read()
         {
-            var span = GetSpan();
-            var v = span.Read();
-            Position += span.Position - Position;
-            return v;
+            //var span = GetSpan();
+            //var v = span.Read();
+            //Position += span.Position - Position;
+            return Bytes.Read();
         }
 
         public T[] ReadArray<T>() where T : unmanaged
         {
-            var span = GetSpan();
-            var v = span.ReadArray<T>();
-            Position += span.Position - Position;
-            return v;
+            //var span = GetSpan();
+            //var v = span.ReadArray<T>();
+            //Position += span.Position - Position;
+            return Bytes.ReadArray<T>();
         }
         public string[] ReadArray()
         {
-            var span = GetSpan();
-            var v = span.ReadArray();
-            Position += span.Position - Position;
-            return v;
+            //var span = GetSpan();
+            //var v = span.ReadArray();
+            //Position += span.Position - Position;
+            return Bytes.ReadArray();
         }
 
         public void Read<T>(ref T v) where T : unmanaged
@@ -644,17 +657,17 @@ namespace F
 
         public T[][] ReadArray2<T>() where T : unmanaged
         {
-            var span = GetSpan();
-            var v = span.ReadArray2<T>();
-            Position += span.Position - Position;
-            return v;
+            //var span = GetSpan();
+            //var v = span.ReadArray2<T>();
+            //Position += span.Position - Position;
+            return Bytes.ReadArray2<T>();
         }
         public string[][] ReadArray2()
         {
-            var span = GetSpan();
-            var v = span.ReadArray2();
-            Position += span.Position - Position;
-            return v;
+            //var span = GetSpan();
+            //var v = span.ReadArray2();
+            //Position += span.Position - Position;
+            return Bytes.ReadArray2();
         }
 
         public void Read<T>(ref T[][] v) where T : unmanaged
@@ -669,7 +682,7 @@ namespace F
 
         public void Dispose()
         {
-            Bytes = null;
+            //Bytes = null;
         }
 
         public void Read<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged

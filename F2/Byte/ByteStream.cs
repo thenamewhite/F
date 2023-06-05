@@ -13,15 +13,13 @@ namespace F
     /// <summary>
     /// 字节管理
     /// </summary>
-    public ref struct ByteStream
+    public struct ByteStream
     {
         public int Position;
         public int Length;
 
-        private Span<byte> mBuffer;
-
-
-        //public byte[] mBuffer;
+        //private Span<byte> mBuffer;
+        public byte[] mBuffer;
 
         public bool IsEnd
         {
@@ -39,7 +37,8 @@ namespace F
         {
             Position = 0;
             Length = buffer.Length;
-            mBuffer = new Span<byte>(buffer);
+            //mBuffer = new Span<byte>(buffer);
+            mBuffer = buffer;
         }
 
         public ByteStream(Span<byte> buffer)
@@ -47,7 +46,7 @@ namespace F
             Position = 0;
             Length = buffer.Length;
             //mBuffer = new Span<byte>(buffer.ToArray());
-            mBuffer = buffer;
+            mBuffer = buffer.ToArray();
         }
 
         public Span<byte> Span
@@ -288,9 +287,9 @@ namespace F
 
         public void TrySetBuffLength(int newSize)
         {
-            if (mBuffer.Length == 0)
+            if (mBuffer == null || mBuffer.Length == 0)
             {
-                mBuffer = new Span<byte>(new byte[newSize]);
+                mBuffer = new byte[newSize];
             }
             else
             {
@@ -298,8 +297,9 @@ namespace F
                 {
                     var s = Position + newSize;
                     byte[] bytes = new byte[s];
+                    //Span<byte> bytes = stackalloc byte[s];
                     Unsafe.CopyBlock(ref bytes[0], ref mBuffer[0], (uint)mBuffer.Length);
-                    mBuffer = bytes;
+                    mBuffer = bytes.ToArray();
                 }
             }
             Length = mBuffer.Length;
@@ -329,6 +329,9 @@ namespace F
         //    return strbuf.ToString();
         //}
 
-        public static implicit operator byte[](ByteStream Buffer) => Buffer.Span.ToArray();
+        public static implicit operator byte[](ByteStream buffer) => buffer.Span.ToArray();
+
+        public static implicit operator ByteStream(byte[] buffer) => new ByteStream(buffer);
+
     }
 }
