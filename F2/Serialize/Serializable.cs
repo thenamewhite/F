@@ -24,7 +24,7 @@ namespace F
     {
         //public byte[] Bytes = Array.Empty<byte>();
 
-        public  ByteStream Bytes = new ByteStream();
+        public ByteStream Bytes = new ByteStream();
         public int Position;
         //public ByteStream GetSpan()
         //{
@@ -47,19 +47,6 @@ namespace F
             get => Bytes.IsEnd;
         }
 
-        public void WriteObjs(object obj)
-        {
-            var fildes = obj.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            foreach (var item in fildes)
-            {
-                var v = item.GetValue(obj);
-                //null 值直接不写入
-                if (v != null)
-                {
-                    PushObj(v);
-                }
-            }
-        }
         public void PushObj(object obj)
         {
             switch (obj)
@@ -94,7 +81,16 @@ namespace F
                     }
                     else
                     {
-                        WriteObjs(obj);
+                        var fildes = obj.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        foreach (var item in fildes)
+                        {
+                            var v = item.GetValue(obj);
+                            //null 值直接不写入
+                            if (v != null)
+                            {
+                                PushObj(v);
+                            }
+                        }
                     }
                     break;
             }
@@ -139,7 +135,15 @@ namespace F
                 case ulong[] v:
                     Push(v); break;
                 default:
-                    throw new Exception($"not find,{obj.GetType()}");
+                    if (obj is Array[] v2)
+                    {
+                        Bytes.PushLength((v2?.Length).GetValueOrDefault());
+                        foreach (var item in v2)
+                        {
+                            PushAarray(item);
+                        }
+                    }
+                    break;
             }
         }
 
@@ -499,7 +503,10 @@ namespace F
 
         public void PushSerializable<T>(T v) where T : IFSerializable
         {
-            v.Serialization(this);
+            if (v != null)
+            {
+                v.Serialization(this);
+            }
         }
 
         private void Read(object obj)
@@ -536,7 +543,10 @@ namespace F
         }
         public void ReadSerializable<T>(ref T v) where T : IFSerializable
         {
-            v.Deserialization(this);
+            if (v != null)
+            {
+                v.Deserialization(this);
+            }
         }
 
 
@@ -555,20 +565,20 @@ namespace F
         public void ReadSerializable<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = Read<int>();
-            var d = new Dictionary<T, T1>();
+            v = new Dictionary<T, T1>();
             while (count > 0)
             {
                 var se = InstanceT.CreateInstance<T1>();
                 var key = Read<T>();
                 se.Deserialization(this);
-                d.Add(key, se);
+                v.Add(key, se);
                 count--;
             }
         }
         public void ReadSerializable<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = Read<int>();
-            var d = new Dictionary<T, T1[]>();
+            v = new Dictionary<T, T1[]>();
             while (count > 0)
             {
                 var key = Read<T>();
@@ -580,14 +590,14 @@ namespace F
                     se.Deserialization(this);
                     c[i] = se;
                 }
-                d.Add(key, c);
+                v.Add(key, c);
                 count--;
             }
         }
         public void ReadSerializable<T1>(ref Dictionary<string, T1[]> v) where T1 : IFSerializable
         {
             var count = Read<int>();
-            var d = new Dictionary<string, T1[]>();
+            v = new Dictionary<string, T1[]>();
             while (count > 0)
             {
                 var key = Read();
@@ -599,7 +609,7 @@ namespace F
                     se.Deserialization(this);
                     c[i] = se;
                 }
-                d.Add(key, c);
+                v.Add(key, c);
                 count--;
             }
         }

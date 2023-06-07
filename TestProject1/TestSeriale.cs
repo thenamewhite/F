@@ -44,6 +44,7 @@ namespace TestProject1
             new Dictionary<string, Sta[]>() { { "2323", new Sta[] { new Sta() { a = 11232 } } } };
         public Sta[] Sata = new Sta[] { new Sta { As = new int[] { 1 } } };
 
+        public TestF TestF2;
         //public void Deserialization(Serializable serializable)
         //{
         //    throw new NotImplementedException();
@@ -82,6 +83,16 @@ namespace TestProject1
                 serializable.Push(As);
             }
         }
+        public class TestF : IFSerializable
+        {
+            public void Deserialization(Serializable serializable)
+            {
+            }
+
+            public void Serialization(Serializable serializable)
+            {
+            }
+        }
     }
 
     /// <summary>
@@ -103,6 +114,7 @@ namespace TestProject1
             serialize.Read(ref Strings);
             serialize.Read(ref Int2Array);
             serialize.Read(ref String2Array);
+            serialize.ReadSerializable(ref TestF2);
             serialize.ReadSerializable(ref Struct);
             serialize.ReadSerializable(ref Sata);
             serialize.ReadSerializable(ref keyValuePairsIFSerializable12);
@@ -112,6 +124,7 @@ namespace TestProject1
 
         public void Serialization(Serializable serialize)
         {
+            //serialize.Push(new TestSeriale());
             serialize.Push(keyValuePairs);
             serialize.Push(keyValuePairs2);
             serialize.Push(keyValuePairs23);
@@ -124,6 +137,7 @@ namespace TestProject1
             serialize.Push(Strings);
             serialize.Push(Int2Array);
             serialize.Push(String2Array);
+            serialize.PushSerializable(TestF2);
             serialize.PushSerializable(Struct);
             serialize.PushSerializable(Sata);
             serialize.PushSerializable(keyValuePairsIFSerializable12);

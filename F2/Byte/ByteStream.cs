@@ -79,8 +79,11 @@ namespace F
             int length = bytes.Length;
             PushLength(length);
             TrySetBuffLength(length);
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytes[0], (uint)length);
-            Position += length;
+            if (length > 0)
+            {
+                Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytes[0], (uint)length);
+                Position += length;
+            }
         }
 
         public void Push<T>(T[] v) where T : unmanaged
