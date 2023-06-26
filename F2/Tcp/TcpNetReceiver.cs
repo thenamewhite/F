@@ -22,31 +22,21 @@ namespace F
         public int ReceiveSize;
         public byte[] ReceiveBufferArray;
 
+        private bool mIsHead = false;
+
         /// <summary>
         /// 消息头
         /// </summary>
         public virtual void ReceiveHead()
         {
+            mIsHead = true;
         }
-
-
-
 
         public async void Receive()
         {
             int receiveCount = 0;
-            try
-            {
-                receiveCount = await Target.Socket.ReceiveAsync(new ArraySegment<byte>(ReceiveBufferArray, ReceivedPosition, ReceiveSize - ReceivedPosition), SocketFlags.None);
-            }
-
-            catch (SocketException ex)
-            {
-            }
-
             while (Target.Socket?.Connected == true)
             {
-                //int receiveCount = 0;
                 try
                 {
                     receiveCount = await Target.Socket.ReceiveAsync(new ArraySegment<byte>(ReceiveBufferArray, ReceivedPosition, ReceiveSize - ReceivedPosition), SocketFlags.None);
@@ -55,12 +45,22 @@ namespace F
                 catch (SocketException ex)
                 {
                 }
-                ReceivedPosition += receiveCount;
-                if (ReceivedPosition < ReceiveSize)
+                if (!mIsHead)
                 {
-                    continue;
+                    ReceiveHead();
                 }
+                else
+                {
+                    ReceiveData();
+                }
+                ReceivedPosition += receiveCount;
             }
+        }
+        public virtual void ReceiveData()
+        {
+            ReceivedPosition = 0;
+            ReceiveSize = HeadSize;
+            Target.Receive(ReceiveBufferArray);
         }
     }
 }

@@ -45,6 +45,11 @@ namespace F
             return obj;
         }
 
+        public static T CreateInstance<T>(string v) where T : class
+        {
+            return CreateInstance(v) as T;
+        }
+
         public static object CreateInstance(Func<Type> callBack)
         {
             return Activator.CreateInstance(callBack.Invoke());

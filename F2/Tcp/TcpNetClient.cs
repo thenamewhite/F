@@ -10,8 +10,15 @@ namespace F
 
     public class TcpNetClient
     {
-
         private static readonly object locker = new object();
+
+        public enum TcpConnectState
+        {
+            Erro = 0x1,
+            Succeed = 0x2,
+            Disconnect = 0X4,
+        }
+        public Action<TcpConnectState> TcpConnectStateAction;
 
         public Socket Socket
         {
@@ -37,18 +44,23 @@ namespace F
             {
                 Socket = null;
             }
-            //Socket.Connected? Close();
         }
         public void Close() { }
 
-        public void Receive()
+        /// <summary>
+        /// 收到消息
+        /// </summary>
+        public void Receive(byte[] a)
         {
+
         }
+
         /// <summary>
         /// 连接成功
         /// </summary>
         public virtual void OnConnectSuccess()
         {
+            TcpConnectStateAction?.Invoke(TcpConnectState.Succeed);
         }
 
         public void Send(byte[] bytes, int offect, int length)
@@ -62,6 +74,7 @@ namespace F
                 else
                 {
                     //连接断开
+                    TcpConnectStateAction?.Invoke(TcpConnectState.Disconnect);
                 }
             }
         }
