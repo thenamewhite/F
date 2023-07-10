@@ -21,6 +21,7 @@ namespace TestProject1
         public float[] floats;
         public Sta Struct;
         public int[][] Int2Array;
+        public int[][] Int3Array;
 
         public string[][] String2Array;
 
@@ -28,37 +29,35 @@ namespace TestProject1
             new Dictionary<string, double>();
         public Dictionary<string, string> keyValuePairs2 =
             new Dictionary<string, string>();
-        public Dictionary<string, string[]> keyValuePairs23 =
-            new Dictionary<string, string[]>() { { "1", new string[] { "11阿达阿达" } } };
-        public Dictionary<string, string[][]> keyValuePairs234 =
-            new Dictionary<string, string[][]>() { { "1", new string[][] { new string[1] { "中文@#*3*" } } } };
-        public Dictionary<string, double[][]> keyValuePairs2345 =
-            new Dictionary<string, double[][]>() { { "1", new double[1][] { new double[1] { 1.2f } } } };
-        public Dictionary<int, string[][]> keyValuePairs23456 =
-            new Dictionary<int, string[][]>() { { 1, new string[1][] { new string[1] { "1231" } } } };
-        public Dictionary<int, Sta> keyValuePairsIFSerializable =
-            new Dictionary<int, Sta>() { { 1, new Sta() { a = 11 } } };
-        public Dictionary<int, Sta[]> keyValuePairsIFSerializable1 =
-            new Dictionary<int, Sta[]>() { { 1, new Sta[] { new Sta() { a = 11232 } } } };
-        public Dictionary<string, Sta[]> keyValuePairsIFSerializable12 =
-            new Dictionary<string, Sta[]>() { { "2323", new Sta[] { new Sta() { a = 11232 } } } };
+        public Dictionary<string, string[]> keyValuePairs23;
+        public Dictionary<string, string[][]> keyValuePairs234;
+        public Dictionary<string, double[][]> keyValuePairs2345;
+        public Dictionary<int, string[][]> keyValuePairs23456;
+        public Dictionary<int, Sta> keyValuePairsIFSerializable;
+        public Dictionary<int, Sta[]> keyValuePairsIFSerializable1;
+        public Dictionary<string, Sta[]> keyValuePairsIFSerializable12;
         public Sta[] Sata = new Sta[] { new Sta { As = new int[] { 1 } } };
 
         public TestF TestF2;
-        //public void Deserialization(Serializable serializable)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
-        //public void Serialization(Serializable serializable)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
         public enum bb
         {
             a = 3,
             b = 4,
+        }
+        public struct BB<T> : IFSerializable where T : unmanaged
+        {
+            public T Value;
+            public void Deserialization(Serializable serializable)
+            {
+                serializable.Read(ref Value);
+            }
+
+            public void Serialization(Serializable serializable)
+            {
+                serializable.Push(Value);
+            }
         }
         //public Sta Staa;
         public struct Sta : IFSerializable
@@ -102,6 +101,8 @@ namespace TestProject1
     {
         public void Deserialization(Serializable serialize)
         {
+            serialize.Read(ref Inta);
+            serialize.Read(ref Int3Array);
             serialize.Read(ref keyValuePairs);
             serialize.Read(ref keyValuePairs2);
             serialize.Read(ref keyValuePairs23);
@@ -124,7 +125,8 @@ namespace TestProject1
 
         public void Serialization(Serializable serialize)
         {
-            //serialize.Push(new TestSeriale());
+            serialize.Push(Inta);
+            serialize.Push(Int3Array);
             serialize.Push(keyValuePairs);
             serialize.Push(keyValuePairs2);
             serialize.Push(keyValuePairs23);

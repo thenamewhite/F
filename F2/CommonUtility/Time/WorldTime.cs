@@ -139,19 +139,23 @@ namespace F
         }
 
         /// <summary>
-        /// </summary>
         /// <param name="time">间隔时间</param>
-        /// <param name="num">执行次数</param>
-        /// <param name="callback">回调函数</param>
-        public DateTime AddTime(float firstTime, float time, int num, Action<float> callback)
+        /// <param name="num">执行次数,-1无限执行，0执行一次</param>
+        /// <param name="callback"></param>
+        /// <param name="firstTime">首次间隔时间,如果小于等于0，马上执行一次callback函数</param>
+        /// </summary>
+        public DateTime AddTime(float time, int num, Action<float> callback, float firstTime = float.MinValue)
         {
             var dateTime = new DateTime();
             dateTime.Callback = callback;
-            dateTime.FirstTime = firstTime;
+            dateTime.FirstTime = firstTime == float.MinValue ? time : firstTime;
+            if (dateTime.FirstTime <= 0)
+            {
+                callback(0);
+            }
             dateTime.Num = num;
             dateTime.Time = time;
             return AddTime(dateTime);
         }
-
     }
 }

@@ -49,7 +49,7 @@ namespace F
         /// <param name="type"></param>
         /// <param name="level"></param>
         /// <param name="isOnce"></param>
-        public void AddEvent<T>(ActionRef<Event<T>> action, int level = 0, bool isOnce = false)
+        public void AddEvent<T>(ActionRef<Event<T>> action, int level = 0, bool isOnce = false) where T : struct
         {
             var type = typeof(T);
             mKeyValuePairs.TryGetValue(type, out var t);
@@ -81,7 +81,7 @@ namespace F
             listAction.ListActions.Add(eventT);
         }
 
-        public void RemoveEvent<T>(ActionRef<Event<T>> action)
+        public void RemoveEvent<T>(ActionRef<Event<T>> action) where T : struct
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))
@@ -97,7 +97,7 @@ namespace F
                 }
             }
         }
-        public virtual void DispatchEvent<T>(ref T param)
+        public virtual void DispatchEvent<T>(ref T param) where T : struct
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))

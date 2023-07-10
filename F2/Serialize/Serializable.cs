@@ -5,21 +5,6 @@ using System.Drawing;
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
 {
-    public interface IFSerializable
-    {
-        /// <summary>
-        /// 自定义序列化
-        /// </summary>
-        /// <param name="serializable"></param>
-
-        void Serialization(Serializable serializable);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void Deserialization(Serializable serializable);
-    }
-
     public class Serializable : IDisposable
     {
         //public byte[] Bytes = Array.Empty<byte>();
@@ -46,7 +31,7 @@ namespace F
         {
             get => Bytes.IsEnd;
         }
-
+        #region read push obj
         public void PushObj(object obj)
         {
             switch (obj)
@@ -58,7 +43,7 @@ namespace F
                 case float v:
                     Push(v); break;
                 case Enum v:
-                    PushEnum(v);
+                    Push(v);
                     break;
                 case string v:
                     Push(v); break;
@@ -74,6 +59,9 @@ namespace F
                     Push(v); break;
                 case char v:
                     Push(v); break;
+                case IFSerializable v:
+                    PushSerializable(v);
+                    break;
                 default:
                     if (obj.GetType().IsArray)
                     {
@@ -95,7 +83,7 @@ namespace F
                     break;
             }
         }
-        private void PushEnum(Enum v)
+        private void Push(Enum v)
         {
             Type underlyingType = Enum.GetUnderlyingType(v.GetType());
             switch (Type.GetTypeCode(underlyingType))
@@ -125,6 +113,7 @@ namespace F
                 case string[] v:
                     Push(v); break;
                 case byte[] v:
+                    Push(v);
                     break;
                 case sbyte[] v:
                     Push(v); break;
@@ -134,7 +123,10 @@ namespace F
                     Push(v); break;
                 case ulong[] v:
                     Push(v); break;
+                case IFSerializable[] v:
+                    PushSerializable(v); break;
                 default:
+                    //2维数组
                     if (obj is Array[] v2)
                     {
                         Bytes.PushLength((v2?.Length).GetValueOrDefault());
@@ -147,17 +139,49 @@ namespace F
             }
         }
 
-
         /// <summary>
         /// 通过类（反射）读取
         /// </summary>
         /// <param name="v"></param>
         public void ReadObjs(object v)
         {
-
-
         }
 
+        private void Read(object obj)
+        {
+            switch (obj)
+            {
+                case int v:
+                    Read(ref v); break;
+                case uint v:
+                    Read(ref v); break;
+                case float v:
+                    Read(ref v); break;
+                case string v:
+                    Read(ref v); break;
+                case ulong v:
+                    Read(ref v); break;
+                case double v:
+                    Read(ref v); break;
+                case byte v:
+                    Read(ref v); break;
+                case short v:
+                    Read(ref v); break;
+                case ushort v:
+                    Read(ref v); break;
+                case char v:
+                    Read(ref v); break;
+                case int[] v:
+                    Read(ref v); break;
+                //case Dictionary v:
+                case int[][] v:
+                    break;
+                default:
+                    //ReadObjs()
+                    //Read(obj);
+                    break;
+            }
+        }
         private void SetFiledValue(ByteStream stream, object v)
         {
             var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
@@ -211,6 +235,7 @@ namespace F
                 }
             }
         }
+        #endregion
 
         #region push
         public void Push<T>(T v) where T : unmanaged
@@ -219,55 +244,30 @@ namespace F
             //span.Push(v);
             //Position += span.Position - Position;
             //Bytes = span;
-
             Bytes.Push(v);
         }
+
         public void Push(string v)
         {
-            //var span = GetSpan();
-            //span.Push(v);
-            //Position += span.Position - Position;
-            //Bytes = span;
             Bytes.Push(v);
-
         }
 
         public void Push<T>(T[] v) where T : unmanaged
         {
-            //var span = GetSpan();
-            //span.Push(v);
-            //Position += span.Position - Position;
-            //Bytes = span;
             Bytes.Push(v);
-
         }
 
         public void Push(string[] v)
         {
-            //var span = GetSpan();
-            //span.Push(v);
-            //Position += span.Position - Position;
-            //Bytes = span;
             Bytes.Push(v);
-
         }
         public void Push<T>(T[][] v) where T : unmanaged
         {
-            //var span = GetSpan();
-            //span.Push(v);
-            //Position += span.Position - Position;
-            //Bytes = span;
             Bytes.Push(v);
-
         }
         public void Push(string[][] v)
         {
-            //var span = GetSpan();
-            //span.Push(v);
-            //Position += span.Position - Position;
-            //Bytes = span;
             Bytes.Push(v);
-
         }
         #endregion
         #region  Dictionary
@@ -414,19 +414,12 @@ namespace F
                     PushSerializable(item);
                 }
         }
-        public void PushSerializables<T1>(T1[][] v) where T1 : IFSerializable
+        public void PushSerializable<T1>(T1[][] v) where T1 : IFSerializable
         {
             var length = (v?.Length).GetValueOrDefault();
             Push(length);
             if (length > 0)
-                foreach (var serializables in v)
-                {
-                    Push(serializables.Length);
-                    foreach (var serializable in serializables)
-                    {
-                        PushSerializable(serializable);
-                    }
-                }
+                PushSerializable(v);
         }
 
         public void PushSerializable<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : IFSerializable
@@ -448,55 +441,34 @@ namespace F
                 foreach (var item in v)
                 {
                     Push(item.Key);
-                    Push(item.Value.Length);
-                    foreach (var serializable in item.Value)
-                    {
-                        PushSerializable(serializable);
-                    }
+                    PushSerializable(item.Value);
                 }
         }
-        //private void Push(Dictionary<object, object[]> v)
-        //{
-        //    var count = (v?.Count).GetValueOrDefault();
-        //    Push(count);
-        //    if (count > 0)
-        //        foreach (var item in v)
-        //        {
-        //            Push(item.Key);
-        //            Push(item.Value.Length);
-        //            foreach (var serializable in item.Value)
-        //            {
-        //                PushSerializables(serializable);
-        //            }
-        //        }
-        //}
 
-        //public void PushSerializables<T, T1>(Dictionary<T, IFSerializable[][]> v) where T : unmanaged where T1 : IFSerializable
-        //{
-        //    Push(v.Count);
-        //    foreach (var item in v)
-        //    {
-        //        Push(item.Key);
-        //        foreach (var serializables in item.Value)
-        //        {
-        //            foreach (var serializable in serializables)
-        //            {
-        //                PushSerializables(serializable);
-        //            }
-        //        }
-        //    }
-        //}
+        public void PushSerializable<T, T1>(Dictionary<T, IFSerializable[][]> v) where T : unmanaged where T1 : IFSerializable
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+            {
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    PushSerializable(item.Value);
+                }
+            }
+        }
 
         public void PushSerializable<T1>(Dictionary<string, T1[]> v) where T1 : IFSerializable
         {
-            Push(v.Count);
-            foreach (var item in v)
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
             {
-                Push(item.Key);
-                Push(item.Value.Length);
-                foreach (var serializable in item.Value)
+                foreach (var item in v)
                 {
-                    PushSerializable(serializable);
+                    Push(item.Key);
+                    PushSerializable(item.Value);
                 }
             }
         }
@@ -509,38 +481,7 @@ namespace F
             }
         }
 
-        private void Read(object obj)
-        {
-            switch (obj)
-            {
-                case int v:
-                    Read(ref v); break;
-                case uint v:
-                    Read(ref v); break;
-                case float v:
-                    Read(ref v); break;
-                case string v:
-                    Read(ref v); break;
-                case ulong v:
-                    Read(ref v); break;
-                case double v:
-                    Read(ref v); break;
-                case byte v:
-                    Read(ref v); break;
-                case short v:
-                    Read(ref v); break;
-                case ushort v:
-                    Read(ref v); break;
-                case char v:
-                    Read(ref v); break;
-                case int[] v:
-                    Read(ref v); break;
-                default:
-                    //ReadObjs()
-                    //Read(obj);
-                    break;
-            }
-        }
+
         public void ReadSerializable<T>(ref T v) where T : IFSerializable
         {
             if (v != null)
@@ -553,7 +494,7 @@ namespace F
         public void ReadSerializable<T>(ref T[] v) where T : IFSerializable
         {
             var length = Read<int>();
-            v = new T[length];
+            if (length > 0) v = new T[length];
             for (int i = 0; i < length; i++)
             {
                 var toClass = InstanceT.CreateInstance<T>();
@@ -616,33 +557,22 @@ namespace F
 
         public T Read<T>() where T : unmanaged
         {
-            //var span = GetSpan();
-            //var v = span.Read<T>();
-            //Position += span.Position - Position;
-
             return Bytes.Read<T>();
         }
 
         public string Read()
         {
-            //var span = GetSpan();
-            //var v = span.Read();
-            //Position += span.Position - Position;
             return Bytes.Read();
         }
 
         public T[] ReadArray<T>() where T : unmanaged
         {
-            //var span = GetSpan();
-            //var v = span.ReadArray<T>();
-            //Position += span.Position - Position;
+
             return Bytes.ReadArray<T>();
         }
         public string[] ReadArray()
         {
-            //var span = GetSpan();
-            //var v = span.ReadArray();
-            //Position += span.Position - Position;
+
             return Bytes.ReadArray();
         }
 
@@ -667,16 +597,10 @@ namespace F
 
         public T[][] ReadArray2<T>() where T : unmanaged
         {
-            //var span = GetSpan();
-            //var v = span.ReadArray2<T>();
-            //Position += span.Position - Position;
             return Bytes.ReadArray2<T>();
         }
         public string[][] ReadArray2()
         {
-            //var span = GetSpan();
-            //var v = span.ReadArray2();
-            //Position += span.Position - Position;
             return Bytes.ReadArray2();
         }
 
