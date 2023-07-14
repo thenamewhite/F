@@ -11,7 +11,7 @@ public class TestGenerateConfig
 
     public static void Start()
     {
-        ExcelConfig.Start("F:\\F2\\F2\\Config\\", "F:\\F2\\F2\\Config\\TestConfigCSharp\\");
+        //ExcelConfig.Start("F:\\F2\\F2\\Config\\", "F:\\F2\\F2\\Config\\TestConfigCSharp\\");
         //var n = "F:\\F2\\F2\\Config\\TestConfigCSharp\\Test2";
         //Test2Config.Deserialization(new Serializable(File.ReadAllBytes(n)));
         //var d = Test2Config.Get(1);

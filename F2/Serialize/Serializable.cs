@@ -516,6 +516,19 @@ namespace F
                 count--;
             }
         }
+        public void ReadSerializable<T>(ref Dictionary<string, T> v) where T : IFSerializable
+        {
+            var count = Read<int>();
+            v = new Dictionary<string, T>();
+            while (count > 0)
+            {
+                var se = InstanceT.CreateInstance<T>();
+                var key = Read();
+                se.Deserialization(this);
+                v.Add(key, se);
+                count--;
+            }
+        }
         public void ReadSerializable<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = Read<int>();
