@@ -433,6 +433,18 @@ namespace F
                     PushSerializable(item.Value);
                 }
         }
+        public void PushSerializable<T1>(Dictionary<string, T1> v) where T1 : IFSerializable
+        {
+            var count = (v?.Count).GetValueOrDefault();
+            Push(count);
+            if (count > 0)
+                foreach (var item in v)
+                {
+                    Push(item.Key);
+                    PushSerializable(item.Value);
+                }
+        }
+
         public void PushSerializable<T, T1>(Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = (v?.Count).GetValueOrDefault();

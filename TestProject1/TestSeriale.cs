@@ -33,7 +33,7 @@ namespace TestProject1
         public Dictionary<string, string[][]> keyValuePairs234;
         public Dictionary<string, double[][]> keyValuePairs2345;
         public Dictionary<int, string[][]> keyValuePairs23456;
-        public Dictionary<int, Sta> keyValuePairsIFSerializable;
+        public Dictionary<string, Sta> keyValuePairsIFSerializable;
         public Dictionary<int, Sta[]> keyValuePairsIFSerializable1;
         public Dictionary<string, Sta[]> keyValuePairsIFSerializable12;
         public Sta[] Sata = new Sta[] { new Sta { As = new int[] { 1 } } };
