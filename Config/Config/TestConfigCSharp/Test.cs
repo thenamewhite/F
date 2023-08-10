@@ -30,6 +30,10 @@ public struct Test : IFSerializable
     ///int2维数组
     /// </summary>
     public int[][] intArray2Filed;
+    /// <summary>
+    ///自定义
+    /// </summary>
+    public TestDefin TesDataFiled;
     public void Deserialization(Serializable serializable)
     {
         serializable.Read(ref TestEnumFFiled);
@@ -39,6 +43,7 @@ public struct Test : IFSerializable
         serializable.Read(ref INTAAFiled);
         serializable.Read(ref stirngArray2Filed);
         serializable.Read(ref intArray2Filed);
+        serializable.ReadSerializable(ref TesDataFiled);
     }
     public void Serialization(Serializable serializable)
     {

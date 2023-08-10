@@ -5,12 +5,14 @@
     <UserSecretsId>bb319b33-24fe-4109-93ed-caa130e7f97d</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Config\**" />
+    <EmbeddedResource Remove="Config\**" />
+    <None Remove="Config\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="ExcelDataReader" Version="3.6.0" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Config\TestConfigCSharp\" />
   </ItemGroup>
 </Project>

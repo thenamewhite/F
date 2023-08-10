@@ -75,7 +75,7 @@ namespace F
         }
         public void Push(string v, Encoding encoding = null)
         {
-            var bytes = (encoding ?? Encoding.UTF8).GetBytes(v);
+            var bytes = (encoding ?? Encoding.UTF8).GetBytes(v == null ? string.Empty : v);
             int length = bytes.Length;
             PushLength(length);
             TrySetBuffLength(length);

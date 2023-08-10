@@ -22,7 +22,7 @@ namespace F
         {
             return Activator.CreateInstance<T>();
         }
-        public static object CreateInstance(string v)
+        public static object CreateInstance(string v, object[] args = null)
         {
             Type type = default;
             type = Assembly.GetExecutingAssembly().GetType(v);
@@ -37,7 +37,7 @@ namespace F
                     }
                 }
             }
-            var obj = Activator.CreateInstance(type) ?? type;
+            var obj = Activator.CreateInstance(type, args) ?? type;
             if (obj == null)
             {
                 throw new Exception($" CreateInstance not fount className:{v}");
