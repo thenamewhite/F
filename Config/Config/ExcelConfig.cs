@@ -161,9 +161,25 @@ namespace F
                                         }
                                         break;
                                     default:
-                                        if (filedType.IndexOf("Enum") > -1)
+                                        if (filedType.IndexOf("[][]") > -1)
                                         {
-                                            v = v != null ? Convert.ToInt32(v) : 0;
+                                            var className = filedType.Split("[][]")[0];
+                                            v = InstanceT.CreateInstance(className);
+                                        }
+                                        else if (filedType.IndexOf("[]") > -1)
+                                        {
+
+                                        }
+                                        else
+                                        {
+                                            if (v != null)
+                                            {
+                                                v = InstanceT.CreateInstance(filedType, ((string)v).Split(",").ToArray());
+                                            }
+                                            else
+                                            {
+                                                v = InstanceT.CreateInstance(filedType);
+                                            }
                                         }
                                         break;
                                 }
@@ -203,7 +219,15 @@ namespace F
             st.AppendLine("    {");
             for (int i = 1; i < classFiled.Count; i++)
             {
-                st.AppendLine("        serializable.Read(ref " + classFiled[i] + ");");
+                if (vlaueFiled[i] as IFSerializable != null)
+                {
+                    st.AppendLine("        serializable.ReadSerializable(ref " + classFiled[i] + ");");
+                }
+                else
+                {
+                    st.AppendLine("        serializable.Read(ref " + classFiled[i] + ");");
+                }
+
             }
             st.AppendLine("    }");
             st.AppendLine("    public void Serialization(Serializable serializable)");
