@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 // author  (hf) Date：2023/6/6 17:06:34
@@ -12,33 +13,33 @@ namespace F
     public class ExcelConfig
     {
         /// <summary>
-        /// as
-        /// </summary>
         ///<param name="readDirectoryPath">读取文件路径</param>
         ///<param name="gengeneratedPath">生成cs 路径</param>
-        public static void Start(string readDirectoryPath, string gengeneratedPath)
+        ///<param name="configBytesPath">生成二进制文件路径</param>
+        /// </summary>
+        public static Dictionary<string, byte[]> Start(string readDirectoryPath, string gengeneratedPath, string configBytesPath = null)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             //var path = "F:\\F2\\F2\\Config\\Test.xlsx";
-
+            var classList = new Dictionary<string, byte[]>();
+            //new List<(string, ByteStream)>();
             if (Directory.Exists(readDirectoryPath))
             {
                 var files = Directory.GetFiles(readDirectoryPath, "*.xlsx", SearchOption.AllDirectories);
                 foreach (var file in files)
                 {
-                    ReadFile(file, gengeneratedPath);
-
+                    var v = ReadFile(file, gengeneratedPath, configBytesPath);
+                    classList.Add(v.Item1, v.Item2);
                 }
             }
             else
             {
                 Console.WriteLine($"{readDirectoryPath}，不是文件夹");
             }
-            return;
-
+            return classList;
         }
 
-        private static void ReadFile(string filePath, string gengeneratedPath)
+        private static (string, ByteStream) ReadFile(string filePath, string gengeneratedPath, string configBytesPath)
         {
             try
             {
@@ -189,7 +190,9 @@ namespace F
                     }
                     index++;
                 }
-                CreateClass(Path.GetFileNameWithoutExtension(filePath), gengeneratedPath, classFiled, typeFiled, filedExpalinFiled, vlaueFiled);
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
+                var dataClassName = fileName + "Data";
+                return (fileName, CreateClass(fileName, dataClassName, gengeneratedPath, configBytesPath, classFiled, typeFiled, filedExpalinFiled, vlaueFiled));
             }
             catch (Exception)
             {
@@ -201,12 +204,13 @@ namespace F
         /// <summary>
         /// 
         /// </summary>
-        private static void CreateClass(string className, string savePath, List<string> classFiled, List<string> classFiledType, List<string> filedExpalin, List<object> vlaueFiled)
+        private static ByteStream CreateClass(string className, string dataClassName, string savePath, string configBytesPath, List<string> classFiled, List<string> classFiledType, List<string> filedExpalin, List<object> vlaueFiled)
         {
             var st = new StringBuilder();
             st.AppendLine("//This is the generated code, the modification is invalid");
             st.AppendLine("using F;");
-            st.AppendLine($"public struct {className}" + " : IFSerializable");
+            st.AppendLine("using System.Collections.Generic;");
+            st.AppendLine($"public struct {dataClassName}" + " : IFSerializable");
             st.AppendLine("{");
             for (int i = 1; i < classFiled.Count; i++)
             {
@@ -232,17 +236,8 @@ namespace F
             st.AppendLine("    }");
             st.AppendLine("    public void Serialization(Serializable serializable)");
             st.AppendLine("    {");
-
-            //for (int i = 1; i < classFiled.Count; i++)
-            //{
-            //    st.AppendLine("        serializable.Push(intFiled);");
-            //}
             st.AppendLine("    }");
-
             st.AppendLine("}");
-            var fileObj = File.CreateText(savePath + className + ".cs");
-            fileObj.Write(st);
-            fileObj.Close();
             var index = 0;
             var key = 0;
             var count = classFiled.Count;
@@ -272,30 +267,46 @@ namespace F
                     index = 0;
                 }
             }
-            FileIO.WriteBytesDict($"{savePath}{className}", dict);
-            CreateClassConfig(className, savePath);
+
+            st.AppendLine("\n");
+            st.AppendLine($"public class {className} : IFSerializable");
+            st.AppendLine("{");
+            st.AppendLine($"    public static Dictionary<int, {dataClassName}> Data;");
+            st.AppendLine($"    public static {dataClassName} Get(int sid)\n    {{\r\n        return Data[sid];\r\n    }}");
+            st.AppendLine($"    public void Deserialization(Serializable se)\r\n    {{");
+            st.AppendLine($"        se.ReadSerializable(ref Data);");
+            st.AppendLine("    }");
+            st.AppendLine("    public void Serialization(Serializable serializable)");
+            st.AppendLine("    {");
+            st.AppendLine("    }");
+            st.AppendLine("}");
+            var fileObj = File.CreateText($"{savePath}{className}.cs");
+            fileObj.Write(st);
+            fileObj.Close();
+            return FileIO.WriteBytesDict($"{configBytesPath}{dataClassName}", dict);
+
+            //CreateClassConfig(className, newClassName, savePath);
 
         }
 
-        private static void CreateClassConfig(string className, string savePath)
+
+        private static void CreateClassConfig(string className, string dataClassName, string savePath)
         {
-            var st = new StringBuilder();
-            st.AppendLine("//This is the generated code, the modification is invalid");
-            st.AppendLine("using F;");
-            st.AppendLine("using System.Collections.Generic;");
-            st.AppendLine($"public static class {className}Config");
-            st.AppendLine("{");
-            st.AppendLine($"    public static Dictionary<int, {className}> Data;");
-            st.AppendLine($"    public static {className} Get(int sid)\n    {{\r\n        return Data[sid];\r\n    }}");
-            st.AppendLine($"    public static void Deserialization(Serializable se)\r\n    {{");
-            //st.AppendLine($"        Data = new Dictionary<int, {className}>();");
-            //st.AppendLine($"        var length = se.Read<int>();\r\n        while (length > 0)\r\n        {{\r\n            var key = se.Read<int>();\r\n            var toClass = new {className}();\r\n            toClass.Deserialization(se);\r\n            Data.Add(key, toClass);\r\n            length--;\r\n        }}\n    }}");
-            st.AppendLine($"        se.ReadSerializable(ref Data);");
-            st.AppendLine("    }");
-            st.AppendLine("}");
-            var fileObj = File.CreateText(savePath + className + "Config" + ".cs");
-            fileObj.Write(st);
-            fileObj.Close();
+            //var st = new StringBuilder();
+            //st.AppendLine("//This is the generated code, the modification is invalid");
+            //st.AppendLine("using F;");
+            //st.AppendLine("using System.Collections.Generic;");
+            //st.AppendLine($"public static class {className}");
+            //st.AppendLine("{");
+            //st.AppendLine($"    public static Dictionary<int, {dataClassName}> Data;");
+            //st.AppendLine($"    public static {dataClassName} Get(int sid)\n    {{\r\n        return Data[sid];\r\n    }}");
+            //st.AppendLine($"    public static void Deserialization(Serializable se)\r\n    {{");
+            //st.AppendLine($"        se.ReadSerializable(ref Data);");
+            //st.AppendLine("    }");
+            //st.AppendLine("}");
+            //var fileObj = File.CreateText(savePath + className + ".cs");
+            //fileObj.Write(st);
+            //fileObj.Close();
         }
     }
 }

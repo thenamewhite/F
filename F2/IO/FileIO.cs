@@ -78,7 +78,7 @@ namespace F
             }
             streamWriter.Close();
         }
-        public static void WriteBytesDict<Tkey>(string path, Dictionary<Tkey, byte[]> v) where Tkey : unmanaged
+        public static ByteStream WriteBytesDict<Tkey>(string path, Dictionary<Tkey, byte[]> v) where Tkey : unmanaged
         {
             var by = new ByteStream();
             by.Push(v.Count);
@@ -88,8 +88,9 @@ namespace F
                 by.CopyFrom(item.Value, 0, item.Value.Length);
             }
             File.WriteAllBytes(path, by.Bytes);
+            return by;
         }
-        public static void WriteBytesDict(string path, Dictionary<string, byte[]> v)
+        public static ByteStream WriteBytesDict(string path, Dictionary<string, byte[]> v)
         {
             var by = new ByteStream();
             by.Push(v.Count);
@@ -99,9 +100,10 @@ namespace F
                 by.CopyFrom(item.Value, 0, item.Value.Length);
             }
             File.WriteAllBytes(path, by.Bytes);
+            return by;
         }
 
-        public static void WriteBytesDict<Tkey>(string path, Dictionary<Tkey, IFSerializable> v, bool isWriteClassName = false) where Tkey : unmanaged
+        public static ByteStream WriteBytesDict<Tkey>(string path, Dictionary<Tkey, IFSerializable> v, bool isWriteClassName = false) where Tkey : unmanaged
         {
             var s = new Serializable();
             s.Push(v.Count);
@@ -115,6 +117,7 @@ namespace F
                 item.Value.Serialization(s);
             }
             File.WriteAllBytes(path, s.Bytes);
+            return s.Bytes;
         }
         /// <summary>
         /// 写入序列化，支持多个不同类写入
@@ -122,7 +125,7 @@ namespace F
         /// <param name="path"></param>
         /// <param name="v"></param>
         /// <param name="isWriteClassName">是否写入类名</param>
-        public static void WriteBytesDict(string path, Dictionary<string, IFSerializable> v, bool isWriteClassName = false)
+        public static ByteStream WriteBytesDict(string path, Dictionary<string, IFSerializable> v, bool isWriteClassName = false)
         {
             var s = new Serializable();
             s.Push(v.Count);
@@ -136,6 +139,7 @@ namespace F
                 item.Value.Serialization(s);
             }
             File.WriteAllBytes(path, s.Bytes);
+            return s.Bytes;
         }
 
         public static byte[] ReadBytes(string path)
