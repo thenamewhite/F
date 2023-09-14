@@ -233,7 +233,7 @@ namespace F
         {
             var length = ReadLength();
             if (length == 0) return string.Empty;
-            var str = Encoding.UTF8.GetString(mBuffer.ToArray(), Position, length);
+            var str = Encoding.UTF8.GetString(mBuffer, Position, length);
             Position += length;
             return str;
         }
@@ -302,7 +302,7 @@ namespace F
                     byte[] bytes = new byte[s];
                     //Span<byte> bytes = stackalloc byte[s];
                     Unsafe.CopyBlock(ref bytes[0], ref mBuffer[0], (uint)mBuffer.Length);
-                    mBuffer = bytes.ToArray();
+                    mBuffer = bytes;
                 }
             }
             Length = mBuffer.Length;

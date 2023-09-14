@@ -107,6 +107,7 @@ namespace F
                 for (int i = count - 1; i >= 0; i--)
                 {
                     var d = data[i];
+                    d.Value = param;
                     data[i].Action(ref d);
                     if (i >= data.Count)
                     {

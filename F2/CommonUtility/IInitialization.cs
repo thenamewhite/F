@@ -11,7 +11,7 @@ namespace F
     /// <summary>
     /// 初始化接口
     /// </summary>
-    interface IInitialization
+    public interface IInitialization
     {
         /// <summary>
         /// 重新初始化
