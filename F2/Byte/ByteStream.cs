@@ -63,7 +63,7 @@ namespace F
         /// <summary>
         /// 基础类型
         /// </summary>
-        public void Push<T>(in T v) where T : unmanaged
+        public void Push<T>(T v) where T : unmanaged
         {
             //TODO没走压缩数据大小的，获取了类型字节长度直接write,后续在看是否压缩字节
             var size = Unsafe.SizeOf<T>();
@@ -73,6 +73,50 @@ namespace F
             Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)size);
             Position += size;
         }
+        /// <summary>
+        /// int 压缩字节
+        /// </summary>
+        /// <param name="v"></param>
+        public void PushInt(int v)
+        {
+            WriteRawByte32((uint)v);
+        }
+        /// <summary>
+        /// uint 压缩字节
+        /// </summary>
+        /// <param name="v"></param>
+        public void PushUnit(uint v)
+        {
+            WriteRawByte32(v);
+        }
+        private void WriteRawByte32(uint value)
+        {
+            while (true)
+            {
+                if ((value & ~0x7F) == 0)
+                {//代表只有低7位有值，因此只需1个字节即可完成编码
+                    WriteRawByte(value);
+                    break;
+                }
+                else
+                {
+                    //var c = (value & 0x7F) | 0x80;
+                    WriteRawByte((value & 0x7F) | 0x80);
+                    //writeRawByte((value & 0x7F) | 0x80);//代表编码不止一个字节，value & 0x7f 只取低 7 位，与 0x80 进行按位或（|）运算为了将最高位置位 1 ，代表后续字节也是改数字的一部分
+                    value >>= 7;
+                }
+            }
+        }
+        private void WriteRawByte(uint value)
+        {
+            TrySetBuffLength(1);
+            Span<byte> span = stackalloc byte[1];
+            span[0] = (byte)value;
+            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)1);
+            Position += 1;
+        }
+
+
         public void Push(string v, Encoding encoding = null)
         {
             var bytes = (encoding ?? Encoding.UTF8).GetBytes(v == null ? string.Empty : v);
@@ -236,6 +280,59 @@ namespace F
             var str = Encoding.UTF8.GetString(mBuffer, Position, length);
             Position += length;
             return str;
+        }
+        /// <summary>
+        /// 读取压缩后的字节
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public int ReadInt()
+        {
+            return ReadWa32();
+        }
+        public uint ReadUint()
+        {
+            return (uint)ReadWa32();
+        }
+
+        private int ReadWa32()
+        {
+            int result;
+            var by = Read<byte>();
+            if ((by & 0x80) == 0)
+            {
+                return by;
+            }
+            result = by & 0x7f;
+            int offset = 7;
+            //读取32位, 64 位不写入
+            for (; offset < 32; offset += 7)
+            {
+                int b = Read<byte>();
+                if (b == -1)
+                {
+                    throw new Exception("byte  decode error");
+                }
+                result |= (b & 0x7f) << offset;
+                if ((b & 0x80) == 0)
+                {
+                    return result;
+                }
+            }
+            //// Keep reading up to 64 bits.
+            //for (; offset < 64; offset += 7)
+            //{
+            //    int b = Read<byte>();
+            //    if (b == -1)
+            //    {
+            //        throw new Exception("byte  decode error");
+            //    }
+            //    if ((b & 0x80) == 0)
+            //    {
+            //        return result;
+            //    }
+            //}
+            return result;
         }
 
         public T[] ReadArray<T>() where T : unmanaged
