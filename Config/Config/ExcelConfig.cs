@@ -153,8 +153,8 @@ namespace F
             }
             catch (Exception v)
             {
+                Console.WriteLine($"  read :{v.StackTrace},row:{index + 1},{filePath}");
                 throw new Exception($"  read :{v.StackTrace},row:{index + 1},{filePath}"); ;
-
             }
 
         }
