@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 
@@ -9,13 +10,13 @@ namespace F
     public static class InstanceT
     {
 
-        private static List<Assembly> mAssemblies = new List<Assembly>();
+        public readonly static List<Assembly> Assemblies = new List<Assembly>();
 
         public static void AddAssembly(Assembly assembly)
         {
-            if (!mAssemblies.Contains(assembly))
+            if (!Assemblies.Contains(assembly))
             {
-                mAssemblies.Add(assembly);
+                Assemblies.Add(assembly);
             }
         }
         public static T CreateInstance<T>()
@@ -25,22 +26,25 @@ namespace F
         public static object CreateInstance(string v, object[] args = null)
         {
             Type type = default;
-            type = Assembly.GetExecutingAssembly().GetType(v);
-            if (type == null)
+
+            Object obj = default;
+
+            foreach (var item in Assemblies)
             {
-                foreach (var item in mAssemblies)
+                type = item.GetType(v);
+                if (type != null)
                 {
-                    type = item.GetType(v);
-                    if (type != null)
-                    {
-                        break;
-                    }
+                    break;
                 }
             }
-            var obj = Activator.CreateInstance(type, args) ?? type;
-            if (obj == null)
+            if (type == null)
             {
+                Console.WriteLine($" CreateInstance not fount className:{v}");
                 throw new Exception($" CreateInstance not fount className:{v}");
+            }
+            else
+            {
+                obj = Activator.CreateInstance(type);
             }
             return obj;
         }
