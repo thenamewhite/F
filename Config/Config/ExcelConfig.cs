@@ -17,7 +17,7 @@ namespace F
         ///<param name="gengeneratedPath">生成cs 路径</param>
         ///<param name="configBytesPath">生成二进制文件路径</param>
         /// </summary>
-        public static Dictionary<string, byte[]> Start(string readDirectoryPath, string gengeneratedPath, string configBytesPath = null)
+        public static Dictionary<string, byte[]> Start(string readDirectoryPath, string gengeneratedPath, string configBytesPath = null, string allBytepath = null)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             //var path = "F:\\F2\\F2\\Config\\Test.xlsx";
@@ -26,20 +26,42 @@ namespace F
             if (Directory.Exists(readDirectoryPath))
             {
                 var files = Directory.GetFiles(readDirectoryPath, "*.xlsx", SearchOption.AllDirectories);
-                foreach (var file in files)
+                try
                 {
-                    var p = Path.GetFileName(file);
-                    if (Path.GetFileName(file)[0] == '~')
+                    foreach (var file in files)
                     {
-                        continue;
+                        var p = Path.GetFileName(file);
+                        if (Path.GetFileName(file)[0] == '~')
+                        {
+                            continue;
+                        }
+                        var v = ReadFile(file, gengeneratedPath, configBytesPath);
+                        classList.Add(v.Item1, v.Item2);
                     }
-                    var v = ReadFile(file, gengeneratedPath, configBytesPath);
-                    classList.Add(v.Item1, v.Item2);
+                    Console.WriteLine($"Code Success");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine($"Code erro");
                 }
             }
             else
             {
                 Console.WriteLine($"{readDirectoryPath}，不是文件夹");
+            }
+            if (allBytepath != null)
+            {
+                ByteStream byteStream = default(ByteStream);
+                byteStream.Push(classList.Count);
+                foreach (var item in classList)
+                {
+                    byteStream.Push(item.Key);
+                    //key 当做类名
+                    byteStream.Push(item.Key);
+                    byteStream.CopyFrom(item.Value, 0, item.Value.Length);
+                }
+                //这里后缀生成后缀不能为.bytes unity 微信插件会自动缓存.bytes
+                FileIO.WriteBytes(allBytepath, byteStream);
             }
             return classList;
         }
