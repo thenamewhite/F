@@ -269,6 +269,36 @@ namespace F
         {
             Bytes.Push(v);
         }
+        //压缩字节
+        public void PushInt(int[][] v)
+        {
+            Bytes.PushInt(v);
+        }
+        public void PushInt(int[] v)
+        {
+            Bytes.PushInt(v);
+        }
+        public void PushInt(int v)
+        {
+            Bytes.PushInt(v);
+        }
+        public void PushUInt(uint v)
+        {
+            Bytes.PushUInt(v);
+        }
+
+        public void PushUInt(uint[][] v)
+        {
+            Bytes.PushUInt(v);
+        }
+        public void PushUInt(uint[] v)
+        {
+            Bytes.PushUInt(v);
+        }
+
+
+
+
         #endregion
         #region  Dictionary
         public void Push<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged
@@ -588,6 +618,30 @@ namespace F
         public string Read()
         {
             return Bytes.Read();
+        }
+        /// <summary>
+        /// 读取压缩字节
+        /// </summary>
+        /// <returns></returns>
+        public int ReadInt(ref int v) { return v = Bytes.ReadInt(); }
+
+        public uint ReadUint(ref uint v) { return v = Bytes.ReadUint(); }
+
+        public uint[] ReadUint(ref uint[] v)
+        {
+            return v = Bytes.ReadUintArray();
+        }
+        public uint[][] ReadUint(ref uint[][] v)
+        {
+            return v = Bytes.ReadUintArray2();
+        }
+        public int[] ReadInt(ref int[] v)
+        {
+            return v = Bytes.ReadIntArray();
+        }
+        public int[][] ReadInt(ref int[][] v)
+        {
+            return v = Bytes.ReadIntArray2();
         }
 
         public T[] ReadArray<T>() where T : unmanaged

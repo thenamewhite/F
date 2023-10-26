@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 // author  (hf) time：2023/4/20 17:03:08
 namespace F
 {
@@ -81,14 +77,56 @@ namespace F
         {
             WriteRawByte32((uint)v);
         }
+
+        public void PushInt(int[] value)
+        {
+            var size = Unsafe.SizeOf<int>();
+            var byteLength = size * value.Length;
+            //TrySetBuffLength(byteLength);
+            PushLength(value.Length);
+            foreach (var v in value)
+            {
+                WriteRawByte32((uint)v);
+            }
+        }
+
+        public void PushInt(int[][] value)
+        {
+            var size = Unsafe.SizeOf<int>();
+            var byteLength = size * value.Length;
+            //TrySetBuffLength(byteLength);
+            PushLength(value.Length);
+            foreach (var v in value)
+            {
+                PushInt(v);
+            }
+        }
         /// <summary>
         /// uint 压缩字节
         /// </summary>
         /// <param name="v"></param>
-        public void PushUnit(uint v)
+        public void PushUInt(uint v)
         {
             WriteRawByte32(v);
         }
+
+        public void PushUInt(uint[] value)
+        {
+            PushLength(value.Length);
+            foreach (var v in value)
+            {
+                WriteRawByte32(v);
+            }
+        }
+        public void PushUInt(uint[][] value)
+        {
+            PushLength(value.Length);
+            foreach (var v in value)
+            {
+                PushUInt(v);
+            }
+        }
+
         private void WriteRawByte32(uint value)
         {
             while (true)
@@ -249,6 +287,7 @@ namespace F
             return result;
         }
 
+
         /// <summary>
         /// 根据传入值返回字节数组
         /// </summary>
@@ -290,9 +329,63 @@ namespace F
         {
             return ReadWa32();
         }
+
+        public int[] ReadIntArray()
+        {
+            var count = ReadLength();
+            var v = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                v[i] = ReadWa32();
+            }
+            return v;
+        }
+        public int[][] ReadIntArray2()
+        {
+            var count = ReadLength();
+            var v = new int[count][];
+            for (int i = 0; i < count; i++)
+            {
+                v[i] = ReadIntArray();
+            }
+            return v;
+        }
+
+        /// <summary>
+        /// 读取压缩的字节
+        /// </summary>
+        /// <returns></returns>
         public uint ReadUint()
         {
             return (uint)ReadWa32();
+        }
+        /// <summary>
+        /// 读取压缩的字节
+        /// </summary>
+        /// <returns></returns>
+        public uint[] ReadUintArray()
+        {
+            var count = ReadLength();
+            var v = new uint[count];
+            for (int i = 0; i < count; i++)
+            {
+                v[i] = (uint)ReadWa32();
+            }
+            return v;
+        }
+        /// <summary>
+        /// 读取压缩的字节
+        /// </summary>
+        /// <returns></returns>
+        public uint[][] ReadUintArray2()
+        {
+            var count = ReadLength();
+            var v = new uint[count][];
+            for (int i = 0; i < count; i++)
+            {
+                v[i] = ReadUintArray();
+            }
+            return v;
         }
 
         private int ReadWa32()

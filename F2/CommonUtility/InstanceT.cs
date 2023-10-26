@@ -44,7 +44,7 @@ namespace F
             }
             else
             {
-                obj = Activator.CreateInstance(type);
+                obj = Activator.CreateInstance(type,args);
             }
             return obj;
         }
