@@ -75,7 +75,7 @@ namespace F
         /// <param name="v"></param>
         public void PushInt(int v)
         {
-            WriteRawByte32((uint)v);
+            WriteRawByte32(v);
         }
 
         public void PushInt(int[] value)
@@ -86,7 +86,7 @@ namespace F
             PushLength(value.Length);
             foreach (var v in value)
             {
-                WriteRawByte32((uint)v);
+                WriteRawByte32(v);
             }
         }
 
@@ -127,23 +127,24 @@ namespace F
             }
         }
 
-        private void WriteRawByte32(uint value)
+        private void WriteRawByte32(long value)
         {
-            while (true)
-            {
-                if ((value & ~0x7F) == 0)
-                {//代表只有低7位有值，因此只需1个字节即可完成编码
-                    WriteRawByte(value);
-                    break;
-                }
-                else
-                {
-                    //var c = (value & 0x7F) | 0x80;
-                    WriteRawByte((value & 0x7F) | 0x80);
-                    //writeRawByte((value & 0x7F) | 0x80);//代表编码不止一个字节，value & 0x7f 只取低 7 位，与 0x80 进行按位或（|）运算为了将最高位置位 1 ，代表后续字节也是改数字的一部分
-                    value >>= 7;
-                }
-            }
+            //while (true)
+            //{
+            //    if ((value & ~0x7F) == 0)
+            //    {//代表只有低7位有值，因此只需1个字节即可完成编码
+            //        WriteRawByte(value);
+            //        break;
+            //    }
+            //    else
+            //    {
+            //        //var c = (value & 0x7F) | 0x80;
+            //        WriteRawByte((value & 0x7F) | 0x80);
+            //        //writeRawByte((value & 0x7F) | 0x80);//代表编码不止一个字节，value & 0x7f 只取低 7 位，与 0x80 进行按位或（|）运算为了将最高位置位 1 ，代表后续字节也是改数字的一部分
+            //        value >>= 7;
+            //    }
+            //}
+            PushLength(value);
         }
         private void WriteRawByte(uint value)
         {
@@ -247,10 +248,12 @@ namespace F
             //}
             Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref buffer[0], (uint)count);
             Position += count;
+            //Push(value);
         }
 
         public int ReadLength()
         {
+            //return Read<int>();
             // ParseRawVarint64
             ulong result = mBuffer[Position++];
             if (result < 0x80)
@@ -283,6 +286,18 @@ namespace F
         public T Read<T>() where T : unmanaged
         {
             ref var result = ref Unsafe.As<byte, T>(ref mBuffer[Position]);
+            //var size = Unsafe.SizeOf<T>();
+            //TrySetBuffLength(size);
+            //Span<byte> span = stackalloc byte[size];
+            //Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), result);
+            //Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)size);
+            //Position += size;
+            //var d = new Span<TextInfo>(1,2);
+
+
+            //var sp = new Span<byte>(result);
+            //var dd = MemoryMarshal.Read<T>(span);
+
             Position += Unsafe.SizeOf<T>();
             return result;
         }
@@ -390,28 +405,29 @@ namespace F
 
         private int ReadWa32()
         {
-            int result;
-            var by = Read<byte>();
-            if ((by & 0x80) == 0)
-            {
-                return by;
-            }
-            result = by & 0x7f;
-            int offset = 7;
-            //读取32位, 64 位不写入
-            for (; offset < 32; offset += 7)
-            {
-                int b = Read<byte>();
-                if (b == -1)
-                {
-                    throw new Exception("byte  decode error");
-                }
-                result |= (b & 0x7f) << offset;
-                if ((b & 0x80) == 0)
-                {
-                    return result;
-                }
-            }
+            //int result;
+            //var by = Read<byte>();
+            //if ((by & 0x80) == 0)
+            //{
+            //    return by;
+            //}
+            //result = by & 0x7f;
+            //int offset = 7;
+            ////读取32位, 64 位不写入
+            //for (; offset < 32; offset += 7)
+            //{
+            //    int b = Read<byte>();
+            //    if (b == -1)
+            //    {
+            //        throw new Exception("byte  decode error");
+            //    }
+            //    result |= (b & 0x7f) << offset;
+            //    if ((b & 0x80) == 0)
+            //    {
+            //        return result;
+            //    }
+            //}
+            return ReadLength();
             //// Keep reading up to 64 bits.
             //for (; offset < 64; offset += 7)
             //{
@@ -425,7 +441,7 @@ namespace F
             //        return result;
             //    }
             //}
-            return result;
+            //return result;
         }
 
         public T[] ReadArray<T>() where T : unmanaged

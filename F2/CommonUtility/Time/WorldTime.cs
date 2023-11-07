@@ -44,24 +44,33 @@ namespace F
             /// </summary>
             public float FirstTime;
             public Action<float> Callback;
+
+            //public static bool operator ==(DateTime v, DateTime v2)
+            //{
+            //    return v.Callback == v2.Callback;
+            //}
+            //public static bool operator !=(DateTime v, DateTime v2)
+            //{
+            //    return v.Callback != v2.Callback;
+            //}
         }
 
         public class DateTimeDown : IInitialization
         {
 
-            public DateTime DateTime;
+            internal DateTime DateTime;
             /// <summary>
             /// 当前时间
             /// </summary>
-            public float CurrentTime;
+            internal float CurrentTime;
             /// <summary>
             /// 已执行的次数
             /// </summary>
-            public int Num;
+            internal int Num;
             /// <summary>
             /// 首次是否执行
             /// </summary>
-            public bool IsFirstExecute;
+            internal bool IsFirstExecute;
 
             /// <summary>
             /// 重新初始化
@@ -128,14 +137,26 @@ namespace F
                 }
             }
         }
-
-        public DateTime AddTime(DateTime dateTime)
+        public void RemoveTime(DateTimeDown v)
+        {
+            for (int i = 0; i < mDateTimes.Count; i++)
+            {
+                var dateTime = mDateTimes[i];
+                if (dateTime == v)
+                {
+                    mTimePool.Release(dateTime);
+                    mDateTimes.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+        public DateTimeDown AddTime(DateTime dateTime)
         {
             var time = mTimePool.New();
             time.DateTime = dateTime;
             time.CurrentTime = Time;
             mDateTimes.Add(time);
-            return time.DateTime;
+            return time;
         }
 
         /// <summary>
@@ -144,11 +165,11 @@ namespace F
         /// <param name="callback"></param>
         /// <param name="firstTime">首次间隔时间,如果小于等于0，马上执行一次callback函数</param>
         /// </summary>
-        public DateTime AddTime(float time, int num, Action<float> callback, float firstTime = float.MinValue)
+        public DateTimeDown AddTime(float time, int num, Action<float> callback, float firstTime = float.MaxValue)
         {
             var dateTime = new DateTime();
             dateTime.Callback = callback;
-            dateTime.FirstTime = firstTime == float.MinValue ? time : firstTime;
+            dateTime.FirstTime = firstTime;
             if (dateTime.FirstTime <= 0)
             {
                 callback(0);
