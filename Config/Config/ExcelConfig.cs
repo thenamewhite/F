@@ -62,6 +62,7 @@ namespace F
                 }
                 //这里后缀生成后缀不能为.bytes unity 微信插件会自动缓存.bytes
                 FileIO.WriteBytes(allBytepath, byteStream);
+                //FileIO.WriteBytesDict(allBytepath,classList,true);
             }
             return classList;
         }
@@ -314,7 +315,11 @@ namespace F
                         }
                         else if (filedType.IndexOf("Enum") > -1)
                         {
-                            v = v != null ? Convert.ToInt32(v) : 0;
+                            var e = Enum.Parse(InstanceT.CreateInstance(filedType).GetType(), v.ToString());
+                            if (e.GetType().IsEnum)
+                            {
+                                v = e;
+                            }
                         }
                         else
                         {
@@ -365,18 +370,22 @@ namespace F
                 switch (classFiledType[i])
                 {
                     case "string":
-                    case "int":
                     case "float":
                     case "long":
-                    case "uint":
                     case "string[]":
-                    case "int[]":
-                    case "uint[]":
                     case "float[]":
-                    case "int[][]":
-                    case "uint[][]":
                     case "string[][]":
                         st.AppendLine("        serializable.Read(ref " + classFiled[i] + ");");
+                        break;
+                    case "int":
+                    case "int[]":
+                    case "int[][]":
+                        st.AppendLine("        serializable.ReadInt(ref " + classFiled[i] + ");");
+                        break;
+                    case "uint[]":
+                    case "uint":
+                    case "uint[][]":
+                        st.AppendLine("        serializable.ReadUint(ref " + classFiled[i] + ");");
                         break;
                     default:
                         if (v.IndexOf("Enum") > -1)
@@ -408,7 +417,31 @@ namespace F
                 dict.Add(key, new byte[0]);
                 for (int i = 0; i < classFiledType.Count; i++)
                 {
-                    serializable.PushObj(Push(classFiledType[i], splitFiled.Count >= i ? splitFiled[i] : string.Empty, value.Value[i]));
+                    var obj = Push(classFiledType[i], splitFiled.Count >= i ? splitFiled[i] : string.Empty, value.Value[i]);
+                    switch (obj)
+                    {
+                        case int v:
+                            serializable.PushInt(v);
+                            break;
+                        case int[] v:
+                            serializable.PushInt(v);
+                            break;
+                        case int[][] v:
+                            serializable.PushInt(v);
+                            break;
+                        case uint v:
+                            serializable.PushUInt(v);
+                            break;
+                        case uint[] v:
+                            serializable.PushUInt(v);
+                            break;
+                        case uint[][] v:
+                            serializable.PushUInt(v);
+                            break;
+                        default:
+                            serializable.PushObj(obj);
+                            break;
+                    }
                 }
                 dict[key] = serializable.Bytes;
             }
