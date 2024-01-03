@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -17,32 +18,37 @@ namespace F
         //private Span<byte> mBuffer;
         public byte[] mBuffer;
 
+        public bool IsNotWriteLength;
+
         public bool IsEnd
         {
             get => Length == Position;
         }
 
-        public ByteStream(int length)
+        public ByteStream(int length, bool isNotWriteLength = false)
         {
             Position = 0;
             Length = length;
             mBuffer = new byte[Length];
+            IsNotWriteLength = isNotWriteLength;
         }
 
-        public ByteStream(byte[] buffer)
+        public ByteStream(byte[] buffer, bool isNotWriteLength = false)
         {
             Position = 0;
             Length = buffer.Length;
             //mBuffer = new Span<byte>(buffer);
             mBuffer = buffer;
+            IsNotWriteLength = isNotWriteLength;
         }
 
-        public ByteStream(Span<byte> buffer)
+        public ByteStream(Span<byte> buffer, bool isNotWriteLength = false)
         {
             Position = 0;
             Length = buffer.Length;
             //mBuffer = new Span<byte>(buffer.ToArray());
             mBuffer = buffer.ToArray();
+            IsNotWriteLength = isNotWriteLength;
         }
 
         public Span<byte> Span
@@ -52,16 +58,14 @@ namespace F
 
         public byte[] Bytes
         {
-            get => mBuffer.ToArray();
+            get => mBuffer;
         }
-
 
         /// <summary>
         /// 基础类型
         /// </summary>
         public void Push<T>(T v) where T : unmanaged
         {
-            //TODO没走压缩数据大小的，获取了类型字节长度直接write,后续在看是否压缩字节
             var size = Unsafe.SizeOf<T>();
             TrySetBuffLength(size);
             Span<byte> span = stackalloc byte[size];
@@ -75,26 +79,47 @@ namespace F
         /// <param name="v"></param>
         public void PushInt(int v)
         {
-            WriteRawByte32(v);
+            //var encoded_value = (v << 1) ^ (v >> 31);
+            //WriteRaw64(encoded_value);
+            ZigzagEncode(v);
         }
 
+        /// <summary>
+        /// 处理为一个正整数
+        /// </summary>
+        /// <param name="value"></param>
+        private void ZigzagEncode(int value)
+        {
+            // 将value左移一位，再与value右移31位进行异或运算
+            var encoded_value = (value << 1) ^ (value >> 31);
+            // 将encoded_value写入输出流
+            WriteRawVarint64(encoded_value);
+        }
+        /// <summary>
+        /// 解码
+        /// </summary>
+        /// <returns></returns>
+        private int ZigzagDecode()
+        {
+            // 解析原始64位整数
+            var encoded_value = ParseRawVarint64();
+            // 将编码值右移一位，再与-1进行位与运算，最后再进行位异或运算
+            var decoded_value = (encoded_value >> 1) ^ -(encoded_value & 1);
+            // 返回解码后的值
+            return decoded_value;
+        }
         public void PushInt(int[] value)
         {
-            var size = Unsafe.SizeOf<int>();
-            var byteLength = size * value.Length;
             //TrySetBuffLength(byteLength);
             PushLength(value.Length);
             foreach (var v in value)
             {
-                WriteRawByte32(v);
+                PushLength(v);
             }
         }
 
         public void PushInt(int[][] value)
         {
-            var size = Unsafe.SizeOf<int>();
-            var byteLength = size * value.Length;
-            //TrySetBuffLength(byteLength);
             PushLength(value.Length);
             foreach (var v in value)
             {
@@ -107,7 +132,7 @@ namespace F
         /// <param name="v"></param>
         public void PushUInt(uint v)
         {
-            WriteRawByte32(v);
+            PushLength(v);
         }
 
         public void PushUInt(uint[] value)
@@ -115,7 +140,7 @@ namespace F
             PushLength(value.Length);
             foreach (var v in value)
             {
-                WriteRawByte32(v);
+                PushLength(v);
             }
         }
         public void PushUInt(uint[][] value)
@@ -126,35 +151,6 @@ namespace F
                 PushUInt(v);
             }
         }
-
-        private void WriteRawByte32(long value)
-        {
-            //while (true)
-            //{
-            //    if ((value & ~0x7F) == 0)
-            //    {//代表只有低7位有值，因此只需1个字节即可完成编码
-            //        WriteRawByte(value);
-            //        break;
-            //    }
-            //    else
-            //    {
-            //        //var c = (value & 0x7F) | 0x80;
-            //        WriteRawByte((value & 0x7F) | 0x80);
-            //        //writeRawByte((value & 0x7F) | 0x80);//代表编码不止一个字节，value & 0x7f 只取低 7 位，与 0x80 进行按位或（|）运算为了将最高位置位 1 ，代表后续字节也是改数字的一部分
-            //        value >>= 7;
-            //    }
-            //}
-            PushLength(value);
-        }
-        private void WriteRawByte(uint value)
-        {
-            TrySetBuffLength(1);
-            Span<byte> span = stackalloc byte[1];
-            span[0] = (byte)value;
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)1);
-            Position += 1;
-        }
-
 
         public void Push(string v, Encoding encoding = null)
         {
@@ -227,10 +223,18 @@ namespace F
             }
         }
 
+
         public void PushLength(long value)
         {
+            if (IsNotWriteLength)
+            {
+                return;
+            }
+            WriteRawVarint64(value);
+        }
+        private void WriteRawVarint64(long value)
+        {
             Span<byte> buffer = stackalloc byte[8];
-            // WriteRawVarint64
             int count = 0;
             while (value > 0x7f)
             {
@@ -241,20 +245,11 @@ namespace F
             buffer[count] = (byte)value;
             count++;
             TrySetBuffLength(count);
-            //byte* buffer = stackalloc byte[8];
-            //fixed (byte* bptr = mBuffer)
-            //{
-            //Unsafe.CopyBlockUnaligned(bptr + Position, buffer, (uint)count);
-            //}
             Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref buffer[0], (uint)count);
             Position += count;
-            //Push(value);
         }
-
-        public int ReadLength()
+        private int ParseRawVarint64()
         {
-            //return Read<int>();
-            // ParseRawVarint64
             ulong result = mBuffer[Position++];
             if (result < 0x80)
             {
@@ -278,6 +273,11 @@ namespace F
             }
             return (int)result;
         }
+
+        public int ReadLength()
+        {
+            return ParseRawVarint64();
+        }
         /// <summary>
         /// 从存入的字节数组中读取指定类型值
         /// </summary>
@@ -286,18 +286,6 @@ namespace F
         public T Read<T>() where T : unmanaged
         {
             ref var result = ref Unsafe.As<byte, T>(ref mBuffer[Position]);
-            //var size = Unsafe.SizeOf<T>();
-            //TrySetBuffLength(size);
-            //Span<byte> span = stackalloc byte[size];
-            //Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), result);
-            //Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)size);
-            //Position += size;
-            //var d = new Span<TextInfo>(1,2);
-
-
-            //var sp = new Span<byte>(result);
-            //var dd = MemoryMarshal.Read<T>(span);
-
             Position += Unsafe.SizeOf<T>();
             return result;
         }
@@ -342,7 +330,7 @@ namespace F
         /// <returns></returns>
         public int ReadInt()
         {
-            return ReadWa32();
+            return ZigzagDecode();
         }
 
         public int[] ReadIntArray()
@@ -351,7 +339,7 @@ namespace F
             var v = new int[count];
             for (int i = 0; i < count; i++)
             {
-                v[i] = ReadWa32();
+                v[i] = ReadLength();
             }
             return v;
         }
@@ -372,7 +360,7 @@ namespace F
         /// <returns></returns>
         public uint ReadUint()
         {
-            return (uint)ReadWa32();
+            return (uint)ReadLength();
         }
         /// <summary>
         /// 读取压缩的字节
@@ -384,7 +372,7 @@ namespace F
             var v = new uint[count];
             for (int i = 0; i < count; i++)
             {
-                v[i] = (uint)ReadWa32();
+                v[i] = (uint)ParseRawVarint64();
             }
             return v;
         }
@@ -403,46 +391,6 @@ namespace F
             return v;
         }
 
-        private int ReadWa32()
-        {
-            //int result;
-            //var by = Read<byte>();
-            //if ((by & 0x80) == 0)
-            //{
-            //    return by;
-            //}
-            //result = by & 0x7f;
-            //int offset = 7;
-            ////读取32位, 64 位不写入
-            //for (; offset < 32; offset += 7)
-            //{
-            //    int b = Read<byte>();
-            //    if (b == -1)
-            //    {
-            //        throw new Exception("byte  decode error");
-            //    }
-            //    result |= (b & 0x7f) << offset;
-            //    if ((b & 0x80) == 0)
-            //    {
-            //        return result;
-            //    }
-            //}
-            return ReadLength();
-            //// Keep reading up to 64 bits.
-            //for (; offset < 64; offset += 7)
-            //{
-            //    int b = Read<byte>();
-            //    if (b == -1)
-            //    {
-            //        throw new Exception("byte  decode error");
-            //    }
-            //    if ((b & 0x80) == 0)
-            //    {
-            //        return result;
-            //    }
-            //}
-            //return result;
-        }
 
         public T[] ReadArray<T>() where T : unmanaged
         {

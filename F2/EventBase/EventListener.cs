@@ -11,11 +11,20 @@ namespace F
     {
         private interface IList
         {
+            void Remove();
         }
+
+
         private struct ListActionT<T> : IList
         {
-            public List<Event<T>> ListActions;
+            public List<Event<T>> ListActions { get; set; }
+
+            public void Remove()
+            {
+                ListActions.Clear();
+            }
         }
+
 
         public delegate void ActionRef<T1>(ref T1 arg1);
 
@@ -79,6 +88,22 @@ namespace F
                 }
             }
             listAction.ListActions.Add(eventT);
+        }
+
+        public void RemoveEvents(Type type)
+        {
+            if (mKeyValuePairs.TryGetValue(type, out var t))
+            {
+                t.Remove();
+            }
+        }
+
+        public void RemoveEvents<T>()
+        {
+            if (mKeyValuePairs.TryGetValue(typeof(T), out var t))
+            {
+                t.Remove();
+            }
         }
 
         public void RemoveEvent<T>(ActionRef<Event<T>> action) where T : struct

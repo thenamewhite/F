@@ -36,6 +36,8 @@ namespace F
         {
             switch (obj)
             {
+                case bool v:
+                    Push(v); break;
                 case int v:
                     Push(v); break;
                 case uint v:
@@ -56,6 +58,8 @@ namespace F
                 case short v:
                     Push(v); break;
                 case ushort v:
+                    Push(v); break;
+                case long v:
                     Push(v); break;
                 case char v:
                     Push(v); break;
@@ -113,8 +117,7 @@ namespace F
                 case string[] v:
                     Push(v); break;
                 case byte[] v:
-                    Push(v);
-                    break;
+                    Push(v); break;
                 case sbyte[] v:
                     Push(v); break;
                 case short[] v:
@@ -122,6 +125,8 @@ namespace F
                 case ushort[] v:
                     Push(v); break;
                 case ulong[] v:
+                    Push(v); break;
+                case long[] v:
                     Push(v); break;
                 case IFSerializable[] v:
                     PushSerializable(v); break;
