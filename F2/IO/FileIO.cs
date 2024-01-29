@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 // author  (hf) Date：2023/5/22 10:05:25
 namespace F
 {
     public static class FileIO
     {
+        static FileIO()
+        {
+            InstanceT.AddAssembly(typeof(F.FileIO).Assembly);
+        }
         public static string GetFileSize(double length)
         {
             var sizeConverters = new string[] { "B", "KB", "MB", "GB" };
@@ -81,7 +84,7 @@ namespace F
         public static ByteStream WriteBytesDict<Tkey>(string path, Dictionary<Tkey, byte[]> v) where Tkey : unmanaged
         {
             var by = new ByteStream();
-            by.Push(v.Count);
+            by.PushLength(v.Count);
             foreach (var item in v)
             {
                 by.Push(item.Key);
@@ -93,7 +96,7 @@ namespace F
         public static ByteStream WriteBytesDict(string path, Dictionary<string, byte[]> v)
         {
             var by = new ByteStream();
-            by.Push(v.Count);
+            by.PushLength(v.Count);
             foreach (var item in v)
             {
                 by.Push(item.Key);
@@ -106,7 +109,7 @@ namespace F
         public static ByteStream WriteBytesDict<Tkey>(string path, Dictionary<Tkey, IFSerializable> v, bool isWriteClassName = false) where Tkey : unmanaged
         {
             var s = new Serializable();
-            s.Push(v.Count);
+            s.PushLength(v.Count);
             foreach (var item in v)
             {
                 s.Push(item.Key);
@@ -116,8 +119,8 @@ namespace F
                 }
                 item.Value.Serialization(s);
             }
-            File.WriteAllBytes(path, s.Bytes);
-            return s.Bytes;
+            File.WriteAllBytes(path, s.ByteBuff);
+            return s.ByteBuff;
         }
         /// <summary>
         /// 写入序列化，支持多个不同类写入
@@ -128,7 +131,7 @@ namespace F
         public static ByteStream WriteBytesDict(string path, Dictionary<string, IFSerializable> v, bool isWriteClassName = false)
         {
             var s = new Serializable();
-            s.Push(v.Count);
+            s.PushLength(v.Count);
             foreach (var item in v)
             {
                 s.Push(item.Key);
@@ -138,8 +141,8 @@ namespace F
                 }
                 item.Value.Serialization(s);
             }
-            File.WriteAllBytes(path, s.Bytes);
-            return s.Bytes;
+            File.WriteAllBytes(path, s.ByteBuff);
+            return s.ByteBuff;
         }
 
         public static byte[] ReadBytes(string path)
@@ -157,7 +160,7 @@ namespace F
         public static Dictionary<string, TValue> ReadBytesDict<TValue>(byte[] values, bool isReadClassName = false) where TValue : IFSerializable
         {
             var se = new Serializable(values);
-            var length = se.Read<int>();
+            var length = se.ReadLength();
             var dict = new Dictionary<string, TValue>(length);
             while (length > 0)
             {
@@ -172,7 +175,7 @@ namespace F
         public static Dictionary<Tkey, TValue> ReadBytesDict<Tkey, TValue>(byte[] values, bool isReadClassName = false) where Tkey : unmanaged where TValue : IFSerializable
         {
             var se = new Serializable(values);
-            var length = se.Read<int>();
+            var length =  se.ReadLength();
             var dict = new Dictionary<Tkey, TValue>(length);
             while (length > 0)
             {
@@ -210,8 +213,7 @@ namespace F
             {
                 var bytesValue = item.Split('|');
                 var toClass = InstanceT.CreateInstance<T>();
-                se.Bytes = Convert.FromBase64String(bytesValue[1]);
-                se.Position = 0;
+                se.ByteBuff = Convert.FromBase64String(bytesValue[1]);
                 toClass.Deserialization(se);
                 dict.Add(Convert.ToInt16(bytesValue[0]), toClass);
             }
