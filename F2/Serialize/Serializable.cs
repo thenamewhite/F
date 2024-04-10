@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
 {
-    public class Serializable : IDisposable
+    public partial class Serializable : IDisposable
     {
         //public byte[] Bytes = Array.Empty<byte>();
 
@@ -260,6 +259,52 @@ namespace F
             //Position += span.Position - Position;
             //Bytes = span;
             ByteBuff.Push(v);
+        }
+
+        public int BeginPush(string k)
+        {
+            ByteBuff.Push(k);
+            //占位，用来写入数据长度
+            ByteBuff.Push(0);
+            return ByteBuff.Position;
+        }
+
+        public void EndPush(int pos)
+        {
+            var newpos = ByteBuff.Position;
+            //获取占位符数据所在位置
+            ByteBuff.Position = pos - 4;
+            //写入正确的数据长度
+            ByteBuff.Push(newpos - pos);
+            ByteBuff.Position = newpos;
+        }
+
+        /// <summary>
+        /// 读取key ,value  这种方式兼容性比较好，但是写入时字节长度比传统写入大，待优化
+        /// </summary>
+        /// <param name="serializable"></param>
+        /// <param name="value"></param>
+        public static void DeserializationKeyValue(Serializable serializable, IFSerializableKey value)
+        {
+            //var allDataLength = serializable.Read<int>();
+            while (!serializable.IsEnd)
+            {
+                var key = serializable.Read();
+                var dataLength = serializable.Read<int>();
+                var pos = serializable.ByteBuff.Position;
+                value.Deserialization(serializable, key);
+                if (dataLength > 0 && serializable.ByteBuff.Position - pos != dataLength)
+                {
+                    serializable.ByteBuff.Position = pos + dataLength;
+                }
+            }
+        }
+
+        public void Push<T>(string k, T v) where T : unmanaged
+        {
+            var pos = BeginPush(k);
+            ByteBuff.Push(v);
+            EndPush(pos);
         }
 
         public void Push(string v)
@@ -710,7 +755,7 @@ namespace F
 
         public void Dispose()
         {
-            ByteBuff = null;
+            ByteBuff = default;
         }
 
         public void Read<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged
@@ -806,6 +851,36 @@ namespace F
             {
                 v.Add(Read(), Read<T1>());
             }
+        }
+        #endregion
+
+        #region list
+        public void PushSerializable<T>(List<T> v) where T : IFSerializable
+        {
+            int valueOrDefault = (v?.Count).GetValueOrDefault();
+            Push(valueOrDefault);
+            if (valueOrDefault > 0)
+            {
+                foreach (T v2 in v)
+                {
+                    PushSerializable(v2);
+                }
+            }
+        }
+        public List<T> ReadSerializable<T>(ref List<T> v) where T : IFSerializable, new()
+        {
+            int num = Read<int>();
+            if (num > 0)
+            {
+                v = new List<T>(num);
+            }
+            for (int i = 0; i < num; i++)
+            {
+                var val = new T();
+                val.Deserialization(this);
+                v.Add(val);
+            }
+            return v;
         }
         #endregion
     }

@@ -1,56 +1,47 @@
-﻿using System.Collections.Generic;
-using System;
-using static F.EventListener;
+﻿using System;
+using System.Collections.Generic;
 // author  (hf) time：2023/2/16 10:38:20
 namespace F
 {
+
+
+    public struct EventListenerData<T>
+    {
+        public T Value;
+        ///// <summary>
+        ///// 是否退出后续触发
+        ///// </summary>
+        //public bool IsBreak;
+        public readonly int Level;
+        public readonly bool IsOnce;
+        public readonly Action<EventListenerData<T>> Action;
+
+
+        public EventListenerData(int level, bool isOnce, Action<EventListenerData<T>> action)
+        {
+            //this.IsBreak = isBreak;
+            this.Level = level;
+            this.IsOnce = isOnce;
+            this.Action = action;
+            this.Value = default;
+        }
+    }
     /// <summary>
     /// 实现泛型监听派发 
     /// </summary>
     public class EventListener
     {
-        private interface IList
+        private Dictionary<Type, IDisposable> mKeyValuePairs = new Dictionary<Type, IDisposable>();
+
+        private struct ListActionT<T> : IDisposable
         {
-            void Remove();
-        }
+            public List<EventListenerData<T>> ListActions { get; set; }
 
-
-        private struct ListActionT<T> : IList
-        {
-            public List<Event<T>> ListActions { get; set; }
-
-            public void Remove()
+            public void Dispose()
             {
                 ListActions.Clear();
             }
         }
-
-
-        public delegate void ActionRef<T1>(ref T1 arg1);
-
-        public struct Event<T>
-        {
-            public T Value;
-            /// <summary>
-            /// 是否退出后续触发
-            /// </summary>
-            public bool IsBreak;
-            public readonly int Level;
-            public readonly bool IsOnce;
-            public readonly ActionRef<Event<T>> Action;
-
-            public Event(bool isBreak, int level, bool isOnce, ActionRef<Event<T>> action)
-            {
-                this.IsBreak = isBreak;
-                this.Level = level;
-                this.IsOnce = isOnce;
-                this.Action = action;
-                this.Value = default;
-            }
-        }
-
-        private Dictionary<Type, IList> mKeyValuePairs = new Dictionary<Type, IList>();
-
 
         /// <summary>
         /// 相同函数，相同类型只能注入一个
@@ -58,24 +49,29 @@ namespace F
         /// <param name="type"></param>
         /// <param name="level"></param>
         /// <param name="isOnce"></param>
-        public void AddEvent<T>(ActionRef<Event<T>> action, int level = 0, bool isOnce = false) where T : struct
+        public void AddEvent<T>(Action<EventListenerData<T>> action, int level = 0, bool isOnce = false) where T : struct
         {
             var type = typeof(T);
             mKeyValuePairs.TryGetValue(type, out var t);
+            var listAction = (ListActionT<T>)t;
+
             if (t == null)
             {
-                t = new ListActionT<T>() { ListActions = new List<Event<T>>() { } };
+                t = new ListActionT<T>() { ListActions = new List<EventListenerData<T>>() { } };
                 mKeyValuePairs.Add(type, t);
             }
-            var listAction = (ListActionT<T>)t;
-            foreach (var item in listAction.ListActions)
+            else
             {
-                if (item.Action == action)
+                foreach (var item in listAction.ListActions)
                 {
-                    return;
+                    if (item.Action == action)
+                    {
+                        return;
+                    }
                 }
             }
-            var eventT = new Event<T>(false, level, isOnce, action);
+
+            var eventT = new EventListenerData<T>(level, isOnce, action);
             var eventCount = listAction.ListActions.Count;
             //按照level 优先级排序
             for (int i = 0; i < eventCount; i++)
@@ -94,7 +90,7 @@ namespace F
         {
             if (mKeyValuePairs.TryGetValue(type, out var t))
             {
-                t.Remove();
+                t.Dispose();
             }
         }
 
@@ -102,11 +98,11 @@ namespace F
         {
             if (mKeyValuePairs.TryGetValue(typeof(T), out var t))
             {
-                t.Remove();
+                t.Dispose();
             }
         }
 
-        public void RemoveEvent<T>(ActionRef<Event<T>> action) where T : struct
+        public void RemoveEvent<T>(Action<EventListenerData<T>> action)
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))
@@ -122,7 +118,8 @@ namespace F
                 }
             }
         }
-        public virtual void DispatchEvent<T>(ref T param) where T : struct
+
+        public virtual void DispatchEvent<T>(T param)
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))
@@ -133,19 +130,62 @@ namespace F
                 {
                     var d = data[i];
                     d.Value = param;
-                    data[i].Action(ref d);
+                    try
+                    {
+                        d.Action(d);
+                    }
+                    catch (System.Exception err)
+                    {
+                        throw new Exception($"{err.StackTrace},{err}");
+                    }
+                    finally
+                    {
+                        if (d.IsOnce)
+                        {
+                            data.Remove(d);
+                        }
+                    }
+                    //if (d.IsBreak)
+                    //{
+                    //    break;
+                    //}
+                }
+            }
+        }
+        public virtual void DispatchEvent<T>(ref T param)
+        {
+            var type = typeof(T);
+            if (mKeyValuePairs.TryGetValue(type, out var t))
+            {
+                var data = ((ListActionT<T>)t).ListActions;
+                var count = data.Count;
+                for (int i = count - 1; i >= 0; i--)
+                {
                     if (i >= data.Count)
                     {
                         continue;
                     }
-                    if (data[i].IsOnce)
+                    var d = data[i];
+                    d.Value = param;
+                    try
                     {
-                        data.RemoveAt(i);
+                        d.Action(d);
                     }
-                    if (d.IsBreak)
+                    catch (System.Exception err)
                     {
-                        break;
+                        throw new Exception($"{err.StackTrace},{err}");
                     }
+                    finally
+                    {
+                        if (d.IsOnce)
+                        {
+                            data.Remove(d);
+                        }
+                    }
+                    //if (d.IsBreak)
+                    //{
+                    //    break;
+                    //}
                 }
             }
         }

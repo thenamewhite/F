@@ -13,7 +13,8 @@ namespace F
     {
 
         private float frameTime;
-
+        private readonly List<DateTimeDown> mDateTimes;
+        private readonly ObjectPool<DateTimeDown> mTimePool;
         public float Time
         {
             get;
@@ -22,14 +23,19 @@ namespace F
 
         public WorldTime(float frameRate)
         {
-
             frameTime = 1f / frameRate;
+            //微信环境下 直接在字段上实例化会报错找不到类型
+            mDateTimes = new List<DateTimeDown>();
+            mTimePool = new ObjectPool<DateTimeDown>();
         }
 
-        private List<DateTimeDown> mDateTimes = new List<DateTimeDown>();
-        private ObjectPool<DateTimeDown> mTimePool = new ObjectPool<DateTimeDown>();
+        public WorldTime()
+        {
+        }
 
-        public struct DateTime
+
+
+        public class DateTimeDown : IInitialization
         {
             /// <summary>
             /// 间隔时间
@@ -44,34 +50,14 @@ namespace F
             /// </summary>
             public float FirstTime;
             public Action<float> Callback;
-
-            //public static bool operator ==(DateTime v, DateTime v2)
-            //{
-            //    return v.Callback == v2.Callback;
-            //}
-            //public static bool operator !=(DateTime v, DateTime v2)
-            //{
-            //    return v.Callback != v2.Callback;
-            //}
-        }
-
-        public class DateTimeDown : IInitialization
-        {
-
-            internal DateTime DateTime;
             /// <summary>
             /// 当前时间
             /// </summary>
             internal float CurrentTime;
             /// <summary>
-            /// 已执行的次数
-            /// </summary>
-            internal int Num;
-            /// <summary>
             /// 首次是否执行
             /// </summary>
             internal bool IsFirstExecute;
-
             /// <summary>
             /// 重新初始化
             /// </summary>
@@ -84,9 +70,15 @@ namespace F
             /// </summary>
             public void Release()
             {
-                IsFirstExecute = false;
-                Num = 0;
-                DateTime = default;
+                IsFirstExecute = default;
+                Num = default;
+                Callback = default;
+                Time = default;
+                CurrentTime = default;
+                FirstTime = default;
+            }
+            public DateTimeDown()
+            {
             }
         }
 
@@ -100,21 +92,32 @@ namespace F
                     continue;
                 }
                 var time = mDateTimes[i];
-                if (time.CurrentTime + time.DateTime.FirstTime <= Time && !time.IsFirstExecute)
+                if (!time.IsFirstExecute && time.CurrentTime + time.FirstTime <= Time)
                 {
-                    time.DateTime.Callback?.Invoke(Time - time.CurrentTime);
-                    time.IsFirstExecute = true;
+                    try
+                    {
+                        time.Callback?.Invoke(Time - time.CurrentTime);
+                    }
+                    finally
+                    {
+                        time.IsFirstExecute = true;
+                    }
                     continue;
                 }
-                if (time.CurrentTime + time.DateTime.Time <= Time)
+                if (time.CurrentTime + time.Time <= Time)
                 {
                     time.CurrentTime += frameTime;
-                    time.Num++;
-                    time.DateTime.Callback?.Invoke(Time - time.CurrentTime);
-                    if (time.Num >= time.DateTime.Num)
+                    try
                     {
-                        mTimePool.Release(time);
-                        mDateTimes.RemoveAt(i);
+                        time.Callback?.Invoke(Time - time.CurrentTime);
+                    }
+                    finally
+                    {
+                        if (--time.Num <= 0)
+                        {
+                            mTimePool.Release(time);
+                            mDateTimes.Remove(time);
+                        }
                     }
                 }
             }
@@ -129,7 +132,7 @@ namespace F
             for (int i = 0; i < mDateTimes.Count; i++)
             {
                 var dateTime = mDateTimes[i];
-                if (dateTime.DateTime.Callback == callback)
+                if (dateTime.Callback == callback)
                 {
                     mTimePool.Release(dateTime);
                     mDateTimes.RemoveAt(i);
@@ -150,14 +153,6 @@ namespace F
                 }
             }
         }
-        public DateTimeDown AddTime(DateTime dateTime)
-        {
-            var time = mTimePool.New();
-            time.DateTime = dateTime;
-            time.CurrentTime = Time;
-            mDateTimes.Add(time);
-            return time;
-        }
 
         /// <summary>
         /// <param name="time">间隔时间</param>
@@ -167,16 +162,14 @@ namespace F
         /// </summary>
         public DateTimeDown AddTime(float time, int num, Action<float> callback, float firstTime = float.MaxValue)
         {
-            var dateTime = new DateTime();
-            dateTime.Callback = callback;
-            dateTime.FirstTime = firstTime;
-            if (dateTime.FirstTime <= 0)
+            var obj = mTimePool.New();
+            obj.CurrentTime = Time;
+            if (firstTime == float.MaxValue)
             {
-                callback(0);
+                obj.IsFirstExecute = true;
             }
-            dateTime.Num = num;
-            dateTime.Time = time;
-            return AddTime(dateTime);
+            mDateTimes.Add(obj);
+            return obj;
         }
     }
 }

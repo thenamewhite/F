@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -14,8 +15,7 @@ namespace F
     {
         public int Position;
         public int Length;
-
-        //private Span<byte> mBuffer;
+        
         public byte[] mBuffer;
 
         public bool IsNotWriteLength;
@@ -234,6 +234,7 @@ namespace F
         }
         private void WriteRawVarint64(long value)
         {
+            //当vlaue 等于long.maxValue是 需要9个字节
             Span<byte> buffer = stackalloc byte[8];
             int count = 0;
             while (value > 0x7f)
@@ -486,7 +487,9 @@ namespace F
         //    return strbuf.ToString();
         //}
 
-        public static implicit operator byte[](ByteStream buffer) => buffer.Span.ToArray();
+        public static implicit operator byte[](ByteStream buffer) => buffer.mBuffer;
+
+        public static implicit operator Span<byte>(ByteStream buffer) => buffer.mBuffer;
 
         public static implicit operator ByteStream(byte[] buffer) => new ByteStream(buffer);
 

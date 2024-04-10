@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,7 +15,6 @@ namespace F
     /// </summary>
     public static class CollisionUtility
     {
-
         /// <summary>
         /// 圆和扇形相交, https://zhuanlan.zhihu.com/p/607728812 参考实现
         /// </summary>
@@ -73,5 +73,44 @@ namespace F
             float rsum = v1Radius + v2Raius;
             return d.SqrMagnitude < rsum * rsum;
         }
+
+        /// <summary>
+        /// 判断一个点的否在园中
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsPointInCircle(Ve2 v1, Ve2 ve2, float radius)
+        {
+            double dx = v1.x - ve2.x;
+            double dy = v1.y - ve2.y;
+            double distanceSquared = dx + dy * dy;
+            return distanceSquared <= radius * radius;
+
+        }
+        /// <summary>
+        /// 射线否和球相交
+        /// </summary>
+        /// <param name="origin">射线起点</param>
+        /// <param name="direction">射线方向</param>
+        /// <param name="center">球中心</param>
+        /// <param name="radius">球半径</param>
+        /// <returns></returns>
+        public static bool IsRayIntersectingSphere(Vector3 origin, Vector3 direction, Vector3 center, float radius)
+        {
+            // 球心到射线起点向量
+            Vector3 Voc = center - origin;
+
+            // 射线起点到球心向量在射线方向上的投影
+            float Poc = Vector3.Dot(Voc, direction);
+
+            // 球心到射线的最短距离平方
+            float dSquared = Vector3.Dot(Voc, Voc) - Poc * Poc;
+
+            // 最短距离
+            float d = MathF.Sqrt(dSquared);
+
+            // 判断相交情况
+            return d <= radius;
+        }
     }
+
 }

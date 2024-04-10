@@ -1,58 +1,200 @@
 
 using F;
-using System.Data;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Text.Json;
-using static TestProject1.TestSeriale;
-
+using System.Runtime.Serialization.Formatters.Binary;
 namespace TestProject1
 {
-    public class TestMain
+
+
+    public class TestMain : IInitialization
     {
+
+
+        public ObjectPool<TestMain> objectPool;
+
+        public void T()
+        {
+            var c = objectPool.New();
+        }
+        public struct Sta : IFSerializableKey
+        {
+            public int a;
+            public int b;
+            public int[] As;
+
+            public Dictionary<int, int[]> keyValuePairs;
+
+            public void Deserialization(Serializable serializable, string key)
+            {
+                switch (key)
+                {
+                    case nameof(a):
+                        serializable.Read(ref a);
+                        break;
+                    case nameof(b):
+                        Console.WriteLine("");
+                        break;
+                    case "c":
+                        var ccc = serializable.ByteBuff.Read<int>();
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            public void Serialization(Serializable serializable)
+            {
+                serializable.Push(nameof(a), a);
+                serializable.Push(nameof(b), b);
+                serializable.Push("c", 1);
+            }
+        }
+        public class TestF : IFSerializable
+        {
+            public void Deserialization(Serializable serializable)
+            {
+            }
+
+            public void Serialization(Serializable serializable)
+            {
+            }
+        }
+
+
+
+        public class BB : EventListener
+        {
+
+            public void bb()
+            {
+
+            }
+            //public void aOnEventHandler(EventListenerData<abb> eventListener)
+            //{
+
+            //}
+        }
+
+        public struct abb
+        {
+            public int x;
+        }
+        public struct b
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="v2">啊啊</param>
+        public static void Tes()
+        {
+
+
+            var mBuffer = new byte[] { };
+            mBuffer.Add<byte>(1);
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    byte v = 0;s
+            int[] numbers = { 1, 2, 3, 4, 5 };
+            //var cccccc = new Dictionary<int>(numbers);
+            var abb = numbers[..1];
+            int[] subArray = numbers[new Range()]; // 使用索引范围对象获取子数组
+
+            Console.WriteLine(string.Join(", ", subArray)); // 输出子数组的元素
+            //}
+            var a = new F.ByteStream();
+
+            var inde = 100000;
+            while (inde-- > 0)
+            {
+                a.Push(inde);
+            }
+            double aa = 1;
+            var sp = new Span<byte>();
+            //a.Push(-1, ref sp);
+            //a.Push(-2, ref sp);
+            //a.Push(1);
+            //a.Push(new int[] { 1 });
+            //a.Push("11");
+            //a.Push("22");
+            //a.SetPosition(0);
+            //var d = a.Read<int>();
+            //var dd = a.ReadArray<int>();
+            //var b = a.Read();
+            //var c = a.R                                         ead();
+            //var st = new Stream();
+            var f = new BinaryFormatter();
+        }
+
+
+
+
+        static List<int> GenerateRandomArray(int targetSum, int minValue, int length)
+        {
+            List<int> result = new List<int>();
+            Random random = new Random();
+
+            // 首先生成一个满足条件的随机数组，长度为length，最小值为minValue，元素总和为targetSum
+            for (int i = 0; i < length; i++)
+            {
+                int randomNum = random.Next(minValue, targetSum - i * minValue) + minValue;
+                result.Add(randomNum);
+            }
+
+            // 然后对数组进行调整，使得数组的元素总和为targetSum
+            int sum = result.Sum();
+            int diff = targetSum - sum;
+            if (diff > 0)
+            {
+                int index = random.Next(0, length);
+                result[index] += diff;
+            }
+
+            return result;
+        }
+
+
 
         public static void Main()
         {
-            InstanceT.AddAssembly(typeof(TestSeriale).Assembly);
-            var testSere = new TestSeriale();
-            testSere.StringA = "啊啊";
-            testSere.Strings = new string[] { };
-            testSere.Inta = 9999999;
-            testSere.Enum = TestSeriale.bb.b;
-            testSere.Intsa = new int[0] { };
-            testSere.Struct = new TestSeriale.Sta() { a = 3, As = new int[2] { 2, 3 }, keyValuePairs = new Dictionary<int, int[]>() { { 1, new int[] { 1, 3, 2 } } } };
-            testSere.floats = new float[3] { -1.1f, 2f, 3f };
-            testSere.Int2Array = new int[2][] { new int[] { 1, 2, 3 }, new int[] { 3, 4, 5 } };
-            testSere.String2Array = new string[2][] { new string[] { "中国汉字啊1231,af", "12312", "113" }, new string[] { "测试中" } };
-            testSere.keyValuePairs23 = new Dictionary<string, string[]>() { { "1", new string[] { "11阿达阿达" } } };
-            testSere.keyValuePairs234 = new Dictionary<string, string[][]>() { { "1", new string[][] { new string[1] { "中文@#*3*" } } } };
-            testSere.keyValuePairs2345 = new Dictionary<string, double[][]>() { { "1", new double[1][] { new double[1] { 1.2f } } } };
-            testSere.keyValuePairs23456 = new Dictionary<int, string[][]>() { { 1, new string[1][] { new string[1] { "1231" } } } };
-            testSere.keyValuePairsIFSerializable = new Dictionary<string, Sta>() { { "1", new Sta() { a = 11 } } };
-            testSere.keyValuePairsIFSerializable12 = new Dictionary<string, Sta[]>() { { "2323", new Sta[] { new Sta() { a = 11232 } } } };
-            testSere.keyValuePairsIFSerializable1 = new Dictionary<int, Sta[]>() { { 1, new Sta[] { new Sta() { a = 11232 } } } };
-            var serializable = new Serializable();
-            //serializable.Push(typeof(TestSeriale).FullName);
-            testSere.Serialization(serializable);
-            var path = "F:\\F2\\TestProject1\\11.txt";
-            var dictString = new Dictionary<string, IFSerializable>();
-            dictString.Add("11", testSere);
-            var d = new Sta();
-            dictString.Add("22", d);
-            FileIO.WriteBytesDict(path, dictString, true);
-            var aa = FileIO.ReadBytesDict<IFSerializable>(File.ReadAllBytes(path),true);
-            //var dictInt = new Dictionary<int, byte[]>();
-            //dictInt.Add(1, serializable.Bytes);
-            //FileIO.WriteBytesDict(path, dictInt);
-            //var bb = FileIO.ReadBytesDict<int, IFSerializable>(File.ReadAllBytes(path));
+            sbyte b = -127;
 
-            //var by = new ByteStream();
-            //by.Push("11");
-            //var st = by.Read("11");
-            TestGenerateConfig.Start();
+            var cccc = new ByteStream();
+            cccc.Push(b);
         }
 
+        public void Initialization()
+        {
+        }
+
+        public void Release()
+        {
+        }
+
+        struct PointSctruct
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+            public PointSctruct()//C#10以后允许struct声明无参构造函数
+            {
+                X = 1;
+                Y = 2;
+            }
+            public PointSctruct(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
+
+        [Flags]
+        public enum Ea
+        {
+
+            V = 1,
+            V2 = 2,
+            v3 = 3,
+        }
 
     }
 }
