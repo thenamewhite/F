@@ -10,12 +10,12 @@
         /// </summary>
         /// <param name="serializable"></param>
 
-        void Serialization(Serializable serializable);
+        void Serialization(SerializableKey serializable);
 
         /// <summary>
         /// 
         /// </summary>
-        void Deserialization(Serializable serializable, string key);
+        void Deserialization(SerializableKey serializable, string key);
     }
 }
 
