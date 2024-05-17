@@ -15,7 +15,7 @@ namespace F
     {
         public int Position;
         public int Length;
-        
+
         public byte[] mBuffer;
 
         public bool IsNotWriteLength;
@@ -68,9 +68,7 @@ namespace F
         {
             var size = Unsafe.SizeOf<T>();
             TrySetBuffLength(size);
-            Span<byte> span = stackalloc byte[size];
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v);
-            Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)size);
+            Unsafe.WriteUnaligned(ref mBuffer[Position], v);
             Position += size;
         }
         /// <summary>
