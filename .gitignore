@@ -4,9 +4,22 @@
 
 /F2/.vs
 /F2/bin/Debug/netstandard2.0
+/F2/bin/Debug/netstandard2.1
+/F2/bin/
+/F2/obj
+/F2/Config/bin
+/*/.vs
+/*/bin
+/*/obj
+/*/Properties
+/*/obj
+/*/*.csproj
+.vs
+
 /TestProject1/obj
 /TestProject1/bin
 /TestProject1/.vs
 /.vs/slnx.sqlite
 /F2/obj/Debug/netstandard2.0/F2.assets.cache
 /.vs/slnx.sqlite
+
