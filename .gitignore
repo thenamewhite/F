@@ -3,10 +3,10 @@
 ################################################################################
 
 /F2/.vs
-/F2/Byte/ByteStream.cs
 /F2/bin/Debug/netstandard2.0
 /TestProject1/obj
 /TestProject1/bin
 /TestProject1/.vs
 /.vs/slnx.sqlite
 /F2/obj/Debug/netstandard2.0/F2.assets.cache
+/.vs/slnx.sqlite
