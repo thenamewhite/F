@@ -6,13 +6,8 @@ namespace F
 {
     public partial class Serializable : IDisposable
     {
-        //public byte[] Bytes = Array.Empty<byte>();
 
         public ByteStream ByteBuff = new ByteStream();
-        //public ByteStream GetSpan()
-        //{
-        //    return new ByteStream(Bytes) { Position = Position };
-        //}
         public Serializable(byte[] bytes)
         {
             ByteBuff = new ByteStream(bytes);
@@ -268,7 +263,12 @@ namespace F
             ByteBuff.Push(0);
             return ByteBuff.Position;
         }
-
+        public int BeginPush(int k)
+        {
+            //占位，用来写入数据长度
+            ByteBuff.Push(0);
+            return ByteBuff.Position;
+        }
         public void EndPush(int pos)
         {
             var newpos = ByteBuff.Position;
@@ -277,27 +277,6 @@ namespace F
             //写入正确的数据长度
             ByteBuff.Push(newpos - pos);
             ByteBuff.Position = newpos;
-        }
-
-        /// <summary>
-        /// 读取key ,value  这种方式兼容性比较好，但是写入时字节长度比传统写入大，待优化
-        /// </summary>
-        /// <param name="serializable"></param>
-        /// <param name="value"></param>
-        public static void DeserializationKeyValue(Serializable serializable, IFSerializableKey value)
-        {
-            //var allDataLength = serializable.Read<int>();
-            while (!serializable.IsEnd)
-            {
-                var key = serializable.Read();
-                var dataLength = serializable.Read<int>();
-                var pos = serializable.ByteBuff.Position;
-                value.Deserialization(serializable, key);
-                if (dataLength > 0 && serializable.ByteBuff.Position - pos != dataLength)
-                {
-                    serializable.ByteBuff.Position = pos + dataLength;
-                }
-            }
         }
 
         public void Push<T>(string k, T v) where T : unmanaged
@@ -575,6 +554,24 @@ namespace F
             }
         }
 
+        public void PushSerializable<T>(string key, T v) where T : IFSerializable
+        {
+            if (v != null)
+            {
+                var keyP = BeginPush(key);
+                var pos = BeginPush(0);
+                v.Serialization(this);
+                EndPush(keyP);
+                EndPush(pos);
+            }
+            else
+            {
+                Push(string.Empty);
+                Push(0);
+            }
+        }
+
+
         public void PushSerializable<T>(T v) where T : IFSerializable
         {
             if (v != null)
@@ -589,7 +586,7 @@ namespace F
             if (v != null)
             {
                 v.Deserialization(this);
-            }
+             }
         }
 
 
@@ -599,9 +596,9 @@ namespace F
             if (length > 0) v = new T[length];
             for (int i = 0; i < length; i++)
             {
-                var toClass = InstanceT.CreateInstance<T>();
-                toClass.Deserialization(this);
-                v[i] = toClass;
+                var se = InstanceT.CreateInstance<T>();
+                ReadSerializable(ref se);
+                v[i] = se;
             }
         }
 
@@ -613,7 +610,8 @@ namespace F
             {
                 var se = InstanceT.CreateInstance<T1>();
                 var key = Read<T>();
-                se.Deserialization(this);
+                //se.Deserialization(this);
+                ReadSerializable(ref se);
                 v.Add(key, se);
                 count--;
             }
@@ -626,7 +624,7 @@ namespace F
             {
                 var se = InstanceT.CreateInstance<T>();
                 var key = Read();
-                se.Deserialization(this);
+                ReadSerializable(ref se);
                 v.Add(key, se);
                 count--;
             }
@@ -643,7 +641,7 @@ namespace F
                 for (int i = 0; i < valuesCount; i++)
                 {
                     var se = InstanceT.CreateInstance<T1>();
-                    se.Deserialization(this);
+                    ReadSerializable(ref se);
                     c[i] = se;
                 }
                 v.Add(key, c);
@@ -662,7 +660,7 @@ namespace F
                 for (int i = 0; i < valuesCount; i++)
                 {
                     var se = InstanceT.CreateInstance<T1>();
-                    se.Deserialization(this);
+                    ReadSerializable(ref se);
                     c[i] = se;
                 }
                 v.Add(key, c);
@@ -780,7 +778,7 @@ namespace F
         {
 
         }
-        public void Read<T, T1>(ref Dictionary<T, string> v) where T : unmanaged
+        public void Read<T>(ref Dictionary<T, string> v) where T : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<T, string>(count);
@@ -877,7 +875,7 @@ namespace F
             for (int i = 0; i < num; i++)
             {
                 var val = new T();
-                val.Deserialization(this);
+                ReadSerializable(ref val);
                 v.Add(val);
             }
             return v;

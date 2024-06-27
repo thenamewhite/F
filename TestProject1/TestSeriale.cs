@@ -17,6 +17,7 @@ namespace TestProject1
         public string StringA;
         public int Inta;
         public int[] Intsa;
+        public uint UintA=uint.MaxValue;
         public bb Enum;
         public float[] floats;
         public Sta Struct;
@@ -36,10 +37,16 @@ namespace TestProject1
         public Dictionary<string, Sta> keyValuePairsIFSerializable;
         public Dictionary<int, Sta[]> keyValuePairsIFSerializable1;
         public Dictionary<string, Sta[]> keyValuePairsIFSerializable12;
+        public Dictionary<int, string> keyValuePairsIFSerializable13;
+
         public Sta[] Sata = new Sta[] { new Sta { As = new int[] { 1 } } };
 
         public TestF TestF2;
 
+        public void Deserialization(Serializable serializable, string key = null)
+        {
+            throw new NotImplementedException();
+        }
 
         public enum bb
         {
@@ -52,6 +59,11 @@ namespace TestProject1
             public void Deserialization(Serializable serializable)
             {
                 serializable.Read(ref Value);
+            }
+
+            public void Deserialization(Serializable serializable, string key = null)
+            {
+                throw new NotImplementedException();
             }
 
             public void Serialization(Serializable serializable)
@@ -75,6 +87,11 @@ namespace TestProject1
                 serializable.Read(ref As);
             }
 
+            public void Deserialization(Serializable serializable, string key = null)
+            {
+                throw new NotImplementedException();
+            }
+
             public void Serialization(Serializable serializable)
             {
                 serializable.Push(a);
@@ -86,6 +103,11 @@ namespace TestProject1
         {
             public void Deserialization(Serializable serializable)
             {
+            }
+
+            public void Deserialization(Serializable serializable, string key = null)
+            {
+                throw new NotImplementedException();
             }
 
             public void Serialization(Serializable serializable)
@@ -101,6 +123,7 @@ namespace TestProject1
     {
         public void Deserialization(Serializable serialize)
         {
+            serialize.ReadUint(ref UintA);
             serialize.Read(ref Inta);
             serialize.Read(ref Int3Array);
             serialize.Read(ref keyValuePairs);
@@ -121,10 +144,13 @@ namespace TestProject1
             serialize.ReadSerializable(ref keyValuePairsIFSerializable12);
             serialize.ReadSerializable(ref keyValuePairsIFSerializable1);
             serialize.ReadSerializable(ref keyValuePairsIFSerializable);
+            serialize.Read(ref keyValuePairsIFSerializable13);
+
         }
 
         public void Serialization(Serializable serialize)
         {
+            serialize.PushUInt(UintA);
             serialize.Push(Inta);
             serialize.Push(Int3Array);
             serialize.Push(keyValuePairs);
@@ -145,6 +171,7 @@ namespace TestProject1
             serialize.PushSerializable(keyValuePairsIFSerializable12);
             serialize.PushSerializable(keyValuePairsIFSerializable1);
             serialize.PushSerializable(keyValuePairsIFSerializable);
+            serialize.Push(keyValuePairsIFSerializable13);
         }
     }
 

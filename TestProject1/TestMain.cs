@@ -23,7 +23,7 @@ namespace TestProject1
 
             public Dictionary<int, int[]> keyValuePairs;
 
-            public void Deserialization(Serializable serializable, string key)
+            public void Deserialization(SerializableKey serializable, string key)
             {
                 switch (key)
                 {
@@ -41,12 +41,13 @@ namespace TestProject1
                 }
             }
 
-            public void Serialization(Serializable serializable)
+            public void Serialization(SerializableKey serializable)
             {
                 serializable.Push(nameof(a), a);
                 serializable.Push(nameof(b), b);
                 serializable.Push("c", 1);
             }
+           
         }
         public class TestF : IFSerializable
         {
