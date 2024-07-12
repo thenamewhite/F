@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -163,36 +162,46 @@ namespace F
             }
         }
 
+        //public void Push<T>(T[] v) where T : unmanaged
+        //{
+        //    var length = (v?.Length).GetValueOrDefault();
+        //    PushLength(length);
+        //    if (length > 0)
+        //    {
+        //        var size = Unsafe.SizeOf<T>();
+        //        var byteLength = size * length;
+        //        TrySetBuffLength(byteLength);
+        //        Unsafe.WriteUnaligned(ref mBuffer[Position], v);
+        //        Position += byteLength;
+        //    }
+        //}
+
         public void Push<T>(T[] v) where T : unmanaged
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
-            if (v is byte[] bytes)
+            if (length > 0)
             {
-                if (length > 0)
+                if (v is byte[] bytes)
                 {
                     TrySetBuffLength(length);
                     Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytes[0], (uint)length);
                     Position += length;
                 }
-            }
-            else
-            {
-                if (length > 0)
+                else
                 {
                     var size = Unsafe.SizeOf<T>();
                     var byteLength = size * length;
                     TrySetBuffLength(byteLength);
                     for (int i = 0; i < v.Length; i++)
                     {
-                        Span<byte> span = stackalloc byte[size];
-                        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v[i]);
-                        Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref span[0], (uint)span.Length);
+                        Unsafe.WriteUnaligned(ref mBuffer[Position], v[i]);
                         Position += size;
                     }
                 }
             }
         }
+
         public void Push(string[] v)
         {
             var length = (v?.Length).GetValueOrDefault();
@@ -291,17 +300,18 @@ namespace F
 
 
         /// <summary>
-        /// 根据传入值返回字节数组
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="v"></param>
-        /// <returns></returns>
+        ///// 根据传入值返回字节数组
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="v"></param>
+        ///// <returns></returns>
         public byte[] Read<T>(T v) where T : unmanaged
         {
-            var size = Unsafe.SizeOf<T>();
-            Span<byte> span = stackalloc byte[size];
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), v);
-            return span.ToArray();
+            int size = Unsafe.SizeOf<T>();
+            byte[] result = new byte[size];
+            Span<byte> span = result.AsSpan();
+            Unsafe.WriteUnaligned(ref span[0], v);
+            return result;
         }
         /// <summary>
         /// 根据传入值返回字节数组

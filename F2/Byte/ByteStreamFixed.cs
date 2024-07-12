@@ -166,25 +166,26 @@ namespace F
         {
             var length = (v?.Length).GetValueOrDefault();
             PushLength(length);
-            if (v is byte[] bytes)
+            if (length > 0)
             {
-                if (length > 0)
+                if (v is byte[] bytes)
                 {
-                    TrySetBuffLength(length);
-                    Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytes[0], (uint)length);
-                    Position += length;
+                    if (length > 0)
+                    {
+                        TrySetBuffLength(length);
+                        Unsafe.CopyBlockUnaligned(ref mBuffer[Position], ref bytes[0], (uint)length);
+                        Position += length;
+                    }
                 }
-            }
-            else
-            {
-                if (length > 0)
+                else
                 {
+
                     var size = Unsafe.SizeOf<T>();
                     var byteLength = size * length;
                     TrySetBuffLength(byteLength);
                     for (int i = 0; i < v.Length; i++)
                     {
-                        Unsafe.WriteUnaligned(mBuffer + Position, v[i]);
+                        Unsafe.WriteUnaligned(ref mBuffer[Position], v[i]);
                         Position += size;
                     }
                 }
@@ -446,7 +447,7 @@ namespace F
                 mBuffer = (byte*)Marshal.ReAllocHGlobal((IntPtr)mBuffer, (IntPtr)num);
                 Length = Position + newSize;
             }
-        }
+        }   
 
         public void CopyFrom(byte[] from, int fromIndex, int size)
         {
@@ -489,6 +490,7 @@ namespace F
         public static implicit operator byte[](ByteStreamFixed buffer) => default;
 
         public static implicit operator ByteStreamFixed(byte[] buffer) => new ByteStreamFixed(buffer);
+
 
     }
 }
