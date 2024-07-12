@@ -12,10 +12,9 @@ namespace F
         ///// 是否退出后续触发
         ///// </summary>
         //public bool IsBreak;
-        public readonly int Level;
-        public readonly bool IsOnce;
-        public readonly Action<EventListenerData<T>> Action;
-
+        internal readonly int Level;
+        internal readonly bool IsOnce;
+        internal readonly Action<EventListenerData<T>> Action;
 
         public EventListenerData(int level, bool isOnce, Action<EventListenerData<T>> action)
         {
@@ -32,14 +31,13 @@ namespace F
     public class EventListener
     {
         private Dictionary<Type, IDisposable> mKeyValuePairs = new Dictionary<Type, IDisposable>();
-
-        private struct ListActionT<T> : IDisposable
+        private class ListActionT<T> : IDisposable
         {
             public List<EventListenerData<T>> ListActions { get; set; }
 
             public void Dispose()
             {
-                ListActions.Clear();
+                ListActions?.Clear();
             }
         }
 
@@ -57,8 +55,8 @@ namespace F
 
             if (t == null)
             {
-                t = new ListActionT<T>() { ListActions = new List<EventListenerData<T>>() { } };
-                mKeyValuePairs.Add(type, t);
+                listAction = new ListActionT<T>() { ListActions = new List<EventListenerData<T>>() { } };
+                mKeyValuePairs.Add(type, listAction);
             }
             else
             {
@@ -94,7 +92,7 @@ namespace F
             }
         }
 
-        public void RemoveEvents<T>()
+        public void RemoveEvents<T>() where T : struct
         {
             if (mKeyValuePairs.TryGetValue(typeof(T), out var t))
             {
@@ -102,7 +100,7 @@ namespace F
             }
         }
 
-        public void RemoveEvent<T>(Action<EventListenerData<T>> action)
+        public void RemoveEvent<T>(Action<EventListenerData<T>> action) where T : struct
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))
@@ -119,7 +117,7 @@ namespace F
             }
         }
 
-        public virtual void DispatchEvent<T>(T param)
+        public virtual void DispatchEvent<T>(T param) where T : struct
         {
             var type = typeof(T);
             if (mKeyValuePairs.TryGetValue(type, out var t))
@@ -152,43 +150,43 @@ namespace F
                 }
             }
         }
-        public virtual void DispatchEvent<T>(ref T param)
-        {
-            var type = typeof(T);
-            if (mKeyValuePairs.TryGetValue(type, out var t))
-            {
-                var data = ((ListActionT<T>)t).ListActions;
-                var count = data.Count;
-                for (int i = count - 1; i >= 0; i--)
-                {
-                    if (i >= data.Count)
-                    {
-                        continue;
-                    }
-                    var d = data[i];
-                    d.Value = param;
-                    try
-                    {
-                        d.Action(d);
-                    }
-                    catch (System.Exception err)
-                    {
-                        throw new Exception($"{err.StackTrace},{err}");
-                    }
-                    finally
-                    {
-                        if (d.IsOnce)
-                        {
-                            data.Remove(d);
-                        }
-                    }
-                    //if (d.IsBreak)
-                    //{
-                    //    break;
-                    //}
-                }
-            }
-        }
+        //public virtual void DispatchEvent<T>(ref T param) where T : struct
+        //{
+        //    var type = typeof(T);
+        //    if (mKeyValuePairs.TryGetValue(type, out var t))
+        //    {
+        //        var data = ((ListActionT<T>)t).ListActions;
+        //        var count = data.Count;
+        //        for (int i = count - 1; i >= 0; i--)
+        //        {
+        //            if (i >= data.Count)
+        //            {
+        //                continue;
+        //            }
+        //            var d = data[i];
+        //            d.Value = param;
+        //            try
+        //            {
+        //                d.Action(d);
+        //            }
+        //            catch (System.Exception err)
+        //            {
+        //                throw new Exception($"{err.StackTrace},{err}");
+        //            }
+        //            finally
+        //            {
+        //                if (d.IsOnce)
+        //                {
+        //                    data.Remove(d);
+        //                }
+        //            }
+        //            //if (d.IsBreak)
+        //            //{
+        //            //    break;
+        //            //}
+        //        }
+        //    }
+        //}
         /// <summary>
         /// 清理所有事件
         /// </summary>
