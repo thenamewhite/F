@@ -58,7 +58,12 @@ namespace F
 
         public byte[] Bytes
         {
-            get => default;
+            get
+            {
+                byte[] byteArray = new byte[Length];
+                Marshal.Copy((IntPtr)mBuffer, byteArray, 0, Length);
+                return byteArray;
+            }
         }
         /// <summary>
         /// 基础类型
@@ -246,7 +251,7 @@ namespace F
         }
         private int ParseRawVarint64()
         {
-            ulong result = mBuffer[Position++];
+             ulong result = mBuffer[Position++];
             if (result < 0x80)
             {
                 return (int)result;
@@ -447,7 +452,7 @@ namespace F
                 mBuffer = (byte*)Marshal.ReAllocHGlobal((IntPtr)mBuffer, (IntPtr)num);
                 Length = Position + newSize;
             }
-        }   
+        }
 
         public void CopyFrom(byte[] from, int fromIndex, int size)
         {

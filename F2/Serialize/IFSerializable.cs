@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-// author  (hf) Date：2023/6/30 10:27:20
+﻿// author  (hf) Date：2023/6/30 10:27:20
+using System.Runtime.CompilerServices;
+[assembly: SuppressIldasm]
 namespace F
 {
     public interface IFSerializable
@@ -11,7 +9,6 @@ namespace F
         /// 自定义序列化
         /// </summary>
         /// <param name="serializable"></param>
-
         void Serialization(Serializable serializable);
 
         /// <summary>

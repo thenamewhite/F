@@ -126,6 +126,10 @@ namespace F
                 var count = data.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
+                    if (i >= data.Count)
+                    {
+                        continue;
+                    }
                     var d = data[i];
                     d.Value = param;
                     try

@@ -12,7 +12,7 @@ namespace F
     public class WorldTime
     {
 
-        private float frameTime;
+        private readonly float frameTime;
         private readonly List<DateTimeDown> mDateTimes;
         private readonly ObjectPool<DateTimeDown> mTimePool;
         public float Time
@@ -25,52 +25,41 @@ namespace F
         {
             frameTime = 1f / frameRate;
             //微信环境下 直接在字段上实例化会报错找不到类型
-            mDateTimes = new List<DateTimeDown>();
+            mDateTimes = new List<DateTimeDown>(8);
             mTimePool = new ObjectPool<DateTimeDown>();
         }
-
-        public WorldTime()
-        {
-        }
-
-
 
         public class DateTimeDown : IInitialization
         {
             /// <summary>
             /// 间隔时间
             /// </summary>
-            public float Time;
+            internal float Time;
             /// <summary>
             /// 执行次数
             /// </summary>
-            public int Num;
+            internal int Num;
             /// <summary>
             /// 首次执行间隔时间
             /// </summary>
-            public float FirstTime;
-            public Action<float> Callback;
+            internal float FirstTime;
+            internal Action<float> Callback;
             /// <summary>
             /// 当前时间
             /// </summary>
             internal float CurrentTime;
             /// <summary>
-            /// 首次是否执行
-            /// </summary>
-            internal bool IsFirstExecute;
-            /// <summary>
             /// 重新初始化
             /// </summary>
-            public void Initialization()
+            void IInitialization.Initialization()
             {
 
             }
             /// <summary>
             /// 对象被回收
             /// </summary>
-            public void Release()
+            void IInitialization.Release()
             {
-                IsFirstExecute = default;
                 Num = default;
                 Callback = default;
                 Time = default;
@@ -92,7 +81,7 @@ namespace F
                     continue;
                 }
                 var time = mDateTimes[i];
-                if (!time.IsFirstExecute && time.CurrentTime + time.FirstTime <= Time)
+                if (time.FirstTime != float.MaxValue && time.CurrentTime + time.FirstTime <= Time)
                 {
                     try
                     {
@@ -100,7 +89,8 @@ namespace F
                     }
                     finally
                     {
-                        time.IsFirstExecute = true;
+                        time.FirstTime = float.MaxValue;
+                        time.CurrentTime += time.FirstTime;
                     }
                     continue;
                 }
@@ -155,19 +145,18 @@ namespace F
         }
 
         /// <summary>
+        /// 
+        /// </summary>
         /// <param name="time">间隔时间</param>
         /// <param name="num">执行次数,-1无限执行，0执行一次</param>
         /// <param name="callback"></param>
         /// <param name="firstTime">首次间隔时间,如果小于等于0，马上执行一次callback函数</param>
-        /// </summary>
+        /// <returns></returns>
         public DateTimeDown AddTime(float time, int num, Action<float> callback, float firstTime = float.MaxValue)
         {
             var obj = mTimePool.New();
             obj.CurrentTime = Time;
-            if (firstTime == float.MaxValue)
-            {
-                obj.IsFirstExecute = true;
-            }
+            obj.FirstTime = firstTime == float.MaxValue ? float.MaxValue : firstTime;
             mDateTimes.Add(obj);
             return obj;
         }

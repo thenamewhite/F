@@ -10,14 +10,11 @@ namespace F
     public static class InstanceT
     {
 
-        public readonly static List<Assembly> Assemblies = new List<Assembly>();
+        public readonly static HashSet<Assembly> Assemblies = new HashSet<Assembly>();
 
         public static void AddAssembly(Assembly assembly)
         {
-            if (!Assemblies.Contains(assembly))
-            {
-                Assemblies.Add(assembly);
-            }
+            Assemblies.Add(assembly);
         }
         public static T CreateInstance<T>()
         {
@@ -44,7 +41,7 @@ namespace F
             }
             else
             {
-                obj = Activator.CreateInstance(type,args);
+                obj = Activator.CreateInstance(type, args);
             }
             return obj;
         }

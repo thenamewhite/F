@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.Serialization;
+using System.Xml.Linq;
 
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
@@ -8,14 +11,16 @@ namespace F
     public partial class SerializableKey : IDisposable
     {
 
-        public ByteStream ByteBuff = new ByteStream();
+        //public ByteStream ByteBuff = new ByteStream();
+        public ByteStreamFixed ByteBuff;
         public SerializableKey(byte[] bytes)
         {
-            ByteBuff = new ByteStream(bytes);
+            ByteBuff = new ByteStreamFixed(bytes);
         }
+
         public SerializableKey(Span<byte> bytes)
         {
-            ByteBuff = new ByteStream(bytes);
+            ByteBuff = new ByteStreamFixed(bytes);
         }
         public SerializableKey()
         {
@@ -25,214 +30,318 @@ namespace F
             get => ByteBuff.IsEnd;
         }
         #region read push obj
-        //public void PushObj(object obj)
-        //{
-        //    switch (obj)
-        //    {
-        //        case bool v:
-        //            Push(v); break;
-        //        case int v:
-        //            Push(v); break;
-        //        case uint v:
-        //            Push(v); break;
-        //        case float v:
-        //            Push(v); break;
-        //        case Enum v:
-        //            Push(v);
-        //            break;
-        //        case string v:
-        //            Push(v); break;
-        //        case ulong v:
-        //            Push(v); break;
-        //        case double v:
-        //            Push(v); break;
-        //        case byte v:
-        //            Push(v); break;
-        //        case short v:
-        //            Push(v); break;
-        //        case ushort v:
-        //            Push(v); break;
-        //        case long v:
-        //            Push(v); break;
-        //        case char v:
-        //            Push(v); break;
-        //        case IFSerializable v:
-        //            PushSerializable(v);
-        //            break;
-        //        default:
-        //            if (obj.GetType().IsArray)
-        //            {
-        //                PushAarray(obj);
-        //            }
-        //            else
-        //            {
-        //                var fildes = obj.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-        //                foreach (var item in fildes)
-        //                {
-        //                    var v = item.GetValue(obj);
-        //                    //null 值直接不写入
-        //                    if (v != null)
-        //                    {
-        //                        PushObj(v);
-        //                    }
-        //                }
-        //            }
-        //            break;
-        //    }
-        //}
-        //private void Push(Enum v)
-        //{
-        //    Type underlyingType = Enum.GetUnderlyingType(v.GetType());
-        //    switch (Type.GetTypeCode(underlyingType))
-        //    {
-        //        case TypeCode.SByte:
-        //        case TypeCode.Byte: Push<byte>(Convert.ToByte(v)); break;
-        //        case TypeCode.Int16:
-        //        case TypeCode.UInt16: Push<int>(Convert.ToInt32(v)); break;
-        //        case TypeCode.Int32:
-        //        case TypeCode.UInt32: Push<UInt32>(Convert.ToUInt32(v)); break;
-        //        case TypeCode.Int64:
-        //        case TypeCode.UInt64: Push<ulong>(Convert.ToUInt64(v)); break;
-        //    }
-        //}
-        //public void PushAarray(object obj)
-        //{
-        //    switch (obj)
-        //    {
-        //        case int[] v:
-        //            Push(v); break;
-        //        case uint[] v:
-        //            Push(v); break;
-        //        case double[] v:
-        //            Push(v); break;
-        //        case float[] v:
-        //            Push(v); break;
-        //        case string[] v:
-        //            Push(v); break;
-        //        case byte[] v:
-        //            Push(v); break;
-        //        case sbyte[] v:
-        //            Push(v); break;
-        //        case short[] v:
-        //            Push(v); break;
-        //        case ushort[] v:
-        //            Push(v); break;
-        //        case ulong[] v:
-        //            Push(v); break;
-        //        case long[] v:
-        //            Push(v); break;
-        //        case IFSerializable[] v:
-        //            PushSerializable(v); break;
-        //        default:
-        //            //2维数组
-        //            if (obj is Array[] v2)
-        //            {
-        //                ByteBuff.PushLength((v2?.Length).GetValueOrDefault());
-        //                foreach (var item in v2)
-        //                {
-        //                    PushAarray(item);
-        //                }
-        //            }
-        //            break;
-        //    }
-        //}
 
-        /// <summary>
-        /// 通过类（反射）读取
-        /// </summary>
-        /// <param name="v"></param>
-        public void ReadObjs(object v)
+        public void PushSerializableObj(object obj)
         {
+            var pos = BeginPush(0);
+            var fildes = obj.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            foreach (var item in fildes)
+            {
+                var v = item.GetValue(obj);
+                //null 值直接不写入
+                if (v != null)
+                {
+                    //Test();
+                    PushObj(v, true, item);
+                }
+            }
+            EndPush(pos);
+
         }
 
-        private void Read(object obj)
+
+        private void PushUnmanagedObj<T>(T v, bool isWriteName = true, FieldInfo fieldInfo = null) where T : unmanaged
+        {
+            if (isWriteName)
+            {
+                Push(fieldInfo.Name, v);
+            }
+            else
+            {
+                Push(v);
+            }
+        }
+
+        private void PushUnmanagedObj<T>(T[] v, bool isWriteName = true, FieldInfo fieldInfo = null) where T : unmanaged
+        {
+            if (isWriteName)
+            {
+                Push(fieldInfo.Name, v);
+            }
+            else
+            {
+                Push(v);
+            }
+        }
+
+        private void PushObj(object obj, bool isWriteName = true, FieldInfo fieldInfo = null)
         {
             switch (obj)
             {
+                case bool v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case int v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case uint v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case float v:
-                    Read(ref v); break;
-                case string v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case ulong v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case double v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case byte v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case short v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case ushort v:
-                    Read(ref v); break;
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
+                case long v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
+                    break;
                 case char v:
-                    Read(ref v); break;
-                case int[] v:
-                    Read(ref v); break;
-                //case Dictionary v:
-                case int[][] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo);
                     break;
-                default:
-                    //ReadObjs()
-                    //Read(obj);
+                case string v:
+                    if (isWriteName)
+                    {
+                        Push(fieldInfo.Name, v);
+                    }
+                    else
+                    {
+                        Push(v);
+                    }
                     break;
-            }
-        }
-        private void SetFiledValue(ByteStream stream, object v)
-        {
-            var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            foreach (var item in fildes)
-            {
-                var type = item.FieldType;
-                if (type == typeof(int))
-                {
-                    item.SetValue(v, stream.Read<int>());
-                }
-                else if (type.IsEnum)
-                {
-                    Type t = Enum.GetUnderlyingType(type);
-                    //var d = readV.Read<uint>();
-                    object eV = default;
-                    switch (Type.GetTypeCode(t))
+                case Enum v:
+                    Type underlyingType = Enum.GetUnderlyingType(v.GetType());
+                    switch (Type.GetTypeCode(underlyingType))
                     {
                         case TypeCode.SByte:
-                        case TypeCode.Byte: eV = Enum.ToObject(type.GetElementType(), stream.Read<byte>()); break;
+                        case TypeCode.Byte: Push<byte>(fieldInfo.Name, Convert.ToByte(v)); break;
                         case TypeCode.Int16:
-                        case TypeCode.UInt16: eV = Enum.ToObject(type, stream.Read<int>()); break;
+                        case TypeCode.UInt16: Push<int>(fieldInfo.Name, Convert.ToInt32(v)); break;
                         case TypeCode.Int32:
-                        case TypeCode.UInt32: eV = Enum.ToObject(type, stream.Read<uint>()); break;
+                        case TypeCode.UInt32: Push<UInt32>(fieldInfo.Name, Convert.ToUInt32(v)); break;
                         case TypeCode.Int64:
-                        case TypeCode.UInt64: eV = Enum.ToObject(type, stream.Read<ulong>()); break;
+                        case TypeCode.UInt64: Push<ulong>(fieldInfo.Name, Convert.ToUInt64(v)); break;
                     }
-                    item.SetValue(v, eV);
-                }
-                else if (type == typeof(string))
-                {
-                    item.SetValue(v, stream.Read());
-                }
-                else if (type == typeof(int[]))
-                {
-                    item.SetValue(v, stream.ReadArray<int>());
-                }
-                else if (type == typeof(float[]))
-                {
-                    item.SetValue(v, stream.ReadArray<float>());
-                }
-                else if (type == typeof(string[]))
-                {
-                    item.SetValue(v, stream.ReadArray());
-                }
-                else if (type.IsValueType)
-                {
-                    //创建结构体
-                    var d = Activator.CreateInstance(type);
-                    SetFiledValue(stream, d);
-                    item.SetValue(v, d);
-                }
+                    break;
+                case IFSerializableKey v:
+                    if (isWriteName)
+                    {
+                        PushSerializable(fieldInfo.Name, v);
+                    }
+                    else
+                    {
+                        PushSerializable(v);
+                    }
+                    break;
+                case IDictionary v:
+                    var pos = BeginPush(fieldInfo.Name);
+                    var count = (v?.Count).GetValueOrDefault();
+                    ByteBuff.PushLength(count);
+                    if (count > 0)
+                    {
+                        foreach (var key in v.Keys)
+                        {
+                            PushObj(key, false);
+                        }
+                        foreach (var value in v.Values)
+                        {
+                            PushObj(value, false);
+                        }
+                    }
+                    EndPush(pos);
+                    break;
+                default:
+                    if (obj.GetType().IsArray)
+                    {
+                        PushAarray(obj, isWriteName, fieldInfo);
+                    }
+                    else
+                    {
+                        var type = obj.GetType();
+                        if (type.IsClass || (type.IsValueType && !type.IsEnum && type.IsPrimitive))
+                        {
+                            var fildes = obj.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                            foreach (var item in fildes)
+                            {
+                                var v = item.GetValue(obj);
+                                //null 值直接不写入
+                                if (v != null)
+                                {
+                                    PushObj(v);
+                                }
+                            }
+                        }
+                    }
+                    break;
             }
         }
+
+        private void PushAarray(object obj, bool isWriteName, FieldInfo fieldInfo)
+        {
+            switch (obj)
+            {
+                case int[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case uint[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case double[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case float[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case byte[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case sbyte[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case short[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case ushort[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case ulong[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case long[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case char[] v:
+                    PushUnmanagedObj(v, isWriteName, fieldInfo); break;
+                case IFSerializableKey[] v:
+                    PushSerializable(fieldInfo.Name, v); break;
+                case string[] v:
+                    if (isWriteName)
+                    {
+                        Push(fieldInfo.Name, v);
+                    }
+                    else
+                    {
+                        Push(v);
+                    }
+                    break;
+                default:
+                    //2维数组
+                    if (obj is Array[] v2)
+                    {
+                        var length = (v2?.Length).GetValueOrDefault();
+                        var po = BeginPush(fieldInfo.Name);
+                        ByteBuff.PushLength(length);
+                        if (length > 0)
+                        {
+                            foreach (var item in v2)
+                            {
+                                PushAarray(item, false, null);
+                            }
+                        }
+                        EndPush(po);
+                    }
+                    break;
+            }
+        }
+
+        // /// <summary>
+        // /// 通过类（反射）读取
+        // /// </summary>
+        // /// <param name="v"></param>
+        // public void ReadObjs(object v)
+        // {
+        // }
+
+        // private void Read(object obj)
+        // {
+        //     switch (obj)
+        //     {
+        //         case int v:
+        //             Read(ref v); break;
+        //         case uint v:
+        //             Read(ref v); break;
+        //         case float v:
+        //             Read(ref v); break;
+        //         case string v:
+        //             Read(ref v); break;
+        //         case ulong v:
+        //             Read(ref v); break;
+        //         case double v:
+        //             Read(ref v); break;
+        //         case byte v:
+        //             Read(ref v); break;
+        //         case short v:
+        //             Read(ref v); break;
+        //         case ushort v:
+        //             Read(ref v); break;
+        //         case char v:
+        //             Read(ref v); break;
+        //         case int[] v:
+        //             Read(ref v); break;
+        //         //case Dictionary v:
+        //         case int[][] v:
+        //             break;
+        //         default:
+        //             //ReadObjs()
+        //             //Read(obj);
+        //             break;
+        //     }
+        // }
+        // private void SetFiledValue(ByteStream stream, object v)
+        // {
+        //     var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        //     foreach (var item in fildes)
+        //     {
+        //         var type = item.FieldType;
+        //         if (type == typeof(int))
+        //         {
+        //             item.SetValue(v, stream.Read<int>());
+        //         }
+        //         else if (type.IsEnum)
+        //         {
+        //             Type t = Enum.GetUnderlyingType(type);
+        //             //var d = readV.Read<uint>();
+        //             object eV = default;
+        //             switch (Type.GetTypeCode(t))
+        //             {
+        //                 case TypeCode.SByte:
+        //                 case TypeCode.Byte: eV = Enum.ToObject(type.GetElementType(), stream.Read<byte>()); break;
+        //                 case TypeCode.Int16:
+        //                 case TypeCode.UInt16: eV = Enum.ToObject(type, stream.Read<int>()); break;
+        //                 case TypeCode.Int32:
+        //                 case TypeCode.UInt32: eV = Enum.ToObject(type, stream.Read<uint>()); break;
+        //                 case TypeCode.Int64:
+        //                 case TypeCode.UInt64: eV = Enum.ToObject(type, stream.Read<ulong>()); break;
+        //             }
+        //             item.SetValue(v, eV);
+        //         }
+        //         else if (type == typeof(string))
+        //         {
+        //             item.SetValue(v, stream.Read());
+        //         }
+        //         else if (type == typeof(int[]))
+        //         {
+        //             item.SetValue(v, stream.ReadArray<int>());
+        //         }
+        //         else if (type == typeof(float[]))
+        //         {
+        //             item.SetValue(v, stream.ReadArray<float>());
+        //         }
+        //         else if (type == typeof(string[]))
+        //         {
+        //             item.SetValue(v, stream.ReadArray());
+        //         }
+        //         else if (type.IsValueType)
+        //         {
+        //             //创建结构体
+        //             var d = Activator.CreateInstance(type);
+        //             SetFiledValue(stream, d);
+        //             item.SetValue(v, d);
+        //         }
+        //     }
+        // }
         #endregion
 
 
@@ -291,6 +400,15 @@ namespace F
             var pos = BeginPush(k);
             ByteBuff.Push(v);
             EndPush(pos);
+        }
+
+        private void Push<T>(T[] v) where T : unmanaged
+        {
+            ByteBuff.Push(v);
+        }
+        private void Push(string[] v)
+        {
+            ByteBuff.Push(v);
         }
 
         public void Push<T>(string k, T[] v) where T : unmanaged

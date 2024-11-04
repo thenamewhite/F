@@ -53,7 +53,7 @@ namespace F
         {
             if (File.Exists(path))
             {
-                File.Create(path).Dispose();
+                File.Delete(path);
             }
         }
         public static void CreateDirectory(string path)
@@ -149,6 +149,7 @@ namespace F
         {
             return File.ReadAllBytes(path);
         }
+
 
         /// <summary>
         /// 读取序列化，支持多个不同类
