@@ -1,30 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
 {
-    public partial class Serializable : IDisposable
+    public class Serializable : IDisposable
     {
+        public ByteStream ByteBuff;
 
-        public ByteStream ByteBuff = new ByteStream();
         public Serializable(byte[] bytes)
         {
             ByteBuff = new ByteStream(bytes);
         }
+
         public Serializable(Span<byte> bytes)
         {
             ByteBuff = new ByteStream(bytes);
             //bytes.ToArray();
         }
+
         public Serializable()
         {
         }
-        public bool IsEnd
+
+        public bool IsEnd => ByteBuff.IsEnd;
+
+        public static void Deserialization<T>(ref T v) where T : IFSerializable
         {
-            get => ByteBuff.IsEnd;
+            using (var serializable = new Serializable())
+            {
+                serializable.ReadSerializable(ref v);
+            }
         }
+
         #region read push obj
+
         public void PushObj(object obj)
         {
             switch (obj)
@@ -66,35 +77,35 @@ namespace F
                     }
                     else
                     {
-                        var fildes = obj.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        var fildes = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
                         foreach (var item in fildes)
                         {
                             var v = item.GetValue(obj);
                             //null 值直接不写入
-                            if (v != null)
-                            {
-                                PushObj(v);
-                            }
+                            if (v != null) PushObj(v);
                         }
                     }
+
                     break;
             }
         }
+
         private void Push(Enum v)
         {
-            Type underlyingType = Enum.GetUnderlyingType(v.GetType());
+            var underlyingType = Enum.GetUnderlyingType(v.GetType());
             switch (Type.GetTypeCode(underlyingType))
             {
                 case TypeCode.SByte:
-                case TypeCode.Byte: Push<byte>(Convert.ToByte(v)); break;
+                case TypeCode.Byte: Push(Convert.ToByte(v)); break;
                 case TypeCode.Int16:
-                case TypeCode.UInt16: Push<int>(Convert.ToInt32(v)); break;
+                case TypeCode.UInt16: Push(Convert.ToInt32(v)); break;
                 case TypeCode.Int32:
-                case TypeCode.UInt32: Push<UInt32>(Convert.ToUInt32(v)); break;
+                case TypeCode.UInt32: Push(Convert.ToUInt32(v)); break;
                 case TypeCode.Int64:
-                case TypeCode.UInt64: Push<ulong>(Convert.ToUInt64(v)); break;
+                case TypeCode.UInt64: Push(Convert.ToUInt64(v)); break;
             }
         }
+
         public void PushAarray(object obj)
         {
             switch (obj)
@@ -128,17 +139,15 @@ namespace F
                     if (obj is Array[] v2)
                     {
                         ByteBuff.PushLength((v2?.Length).GetValueOrDefault());
-                        foreach (var item in v2)
-                        {
-                            PushAarray(item);
-                        }
+                        foreach (var item in v2) PushAarray(item);
                     }
+
                     break;
             }
         }
 
         /// <summary>
-        /// 通过类（反射）读取
+        ///     通过类（反射）读取
         /// </summary>
         /// <param name="v"></param>
         public void ReadObjs(object v)
@@ -174,15 +183,12 @@ namespace F
                 //case Dictionary v:
                 case int[][] v:
                     break;
-                default:
-                    //ReadObjs()
-                    //Read(obj);
-                    break;
             }
         }
+
         private void SetFiledValue(ByteStream stream, object v)
         {
-            var fildes = v.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            var fildes = v.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
             foreach (var item in fildes)
             {
                 var type = item.FieldType;
@@ -192,7 +198,7 @@ namespace F
                 }
                 else if (type.IsEnum)
                 {
-                    Type t = Enum.GetUnderlyingType(type);
+                    var t = Enum.GetUnderlyingType(type);
                     //var d = readV.Read<uint>();
                     object eV = default;
                     switch (Type.GetTypeCode(t))
@@ -206,6 +212,7 @@ namespace F
                         case TypeCode.Int64:
                         case TypeCode.UInt64: eV = Enum.ToObject(type, stream.Read<ulong>()); break;
                     }
+
                     item.SetValue(v, eV);
                 }
                 else if (type == typeof(string))
@@ -233,6 +240,7 @@ namespace F
                 }
             }
         }
+
         #endregion
 
 
@@ -242,6 +250,7 @@ namespace F
         {
             ByteBuff.PushLength(v);
         }
+
         public int ReadLength()
         {
             return ByteBuff.ReadLength();
@@ -263,20 +272,22 @@ namespace F
             ByteBuff.Push(0);
             return ByteBuff.Position;
         }
+
         public int BeginPush(int k)
         {
             //占位，用来写入数据长度
             ByteBuff.Push(0);
             return ByteBuff.Position;
         }
+
         public void EndPush(int pos)
         {
             var newpos = ByteBuff.Position;
             //获取占位符数据所在位置
-            ByteBuff.Position = pos - 4;
+            ByteBuff.SetPosition((uint)pos - 4);
             //写入正确的数据长度
             ByteBuff.Push(newpos - pos);
-            ByteBuff.Position = newpos;
+            ByteBuff.SetPosition((uint)newpos);
         }
 
         public void Push<T>(string k, T v) where T : unmanaged
@@ -300,27 +311,33 @@ namespace F
         {
             ByteBuff.Push(v);
         }
+
         public void Push<T>(T[][] v) where T : unmanaged
         {
             ByteBuff.Push(v);
         }
+
         public void Push(string[][] v)
         {
             ByteBuff.Push(v);
         }
+
         //压缩字节
         public void PushInt(int[][] v)
         {
             ByteBuff.PushInt(v);
         }
+
         public void PushInt(int[] v)
         {
             ByteBuff.PushInt(v);
         }
+
         public void PushInt(int v)
         {
             ByteBuff.PushInt(v);
         }
+
         public void PushUInt(uint v)
         {
             ByteBuff.PushUInt(v);
@@ -330,16 +347,16 @@ namespace F
         {
             ByteBuff.PushUInt(v);
         }
+
         public void PushUInt(uint[] v)
         {
             ByteBuff.PushUInt(v);
         }
 
-
-
-
         #endregion
-        #region  Dictionary
+
+        #region Dictionary
+
         public void Push<T, T1>(Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -351,6 +368,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T, T1>(Dictionary<T, T1[]> v) where T : unmanaged where T1 : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -362,6 +380,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T, T1>(Dictionary<T, T1[][]> v) where T : unmanaged where T1 : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -373,6 +392,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T>(Dictionary<T, string> v) where T : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -384,6 +404,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T>(Dictionary<T, string[]> v) where T : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -395,6 +416,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T>(Dictionary<T, string[][]> v) where T : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -406,6 +428,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T1>(Dictionary<string, T1> v) where T1 : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -417,6 +440,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push(Dictionary<string, string> v)
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -428,6 +452,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push(Dictionary<string, string[]> v)
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -439,6 +464,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T>(Dictionary<string, T[]> v) where T : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -450,6 +476,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push<T>(Dictionary<string, T[][]> v) where T : unmanaged
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -461,6 +488,7 @@ namespace F
                     Push(item.Value);
                 }
         }
+
         public void Push(Dictionary<string, string[][]> v)
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -479,10 +507,9 @@ namespace F
             ByteBuff.PushLength(length);
             if (length > 0)
                 foreach (var item in v)
-                {
                     PushSerializable(item);
-                }
         }
+
         public void PushSerializable<T1>(T1[][] v) where T1 : IFSerializable
         {
             var length = (v?.Length).GetValueOrDefault();
@@ -502,6 +529,7 @@ namespace F
                     PushSerializable(item.Value);
                 }
         }
+
         public void PushSerializable<T1>(Dictionary<string, T1> v) where T1 : IFSerializable
         {
             var count = (v?.Count).GetValueOrDefault();
@@ -526,18 +554,17 @@ namespace F
                 }
         }
 
-        public void PushSerializable<T, T1>(Dictionary<T, IFSerializable[][]> v) where T : unmanaged where T1 : IFSerializable
+        public void PushSerializable<T, T1>(Dictionary<T, IFSerializable[][]> v)
+            where T : unmanaged where T1 : IFSerializable
         {
             var count = (v?.Count).GetValueOrDefault();
             ByteBuff.PushLength(count);
             if (count > 0)
-            {
                 foreach (var item in v)
                 {
                     Push(item.Key);
                     PushSerializable(item.Value);
                 }
-            }
         }
 
         public void PushSerializable<T1>(Dictionary<string, T1[]> v) where T1 : IFSerializable
@@ -545,13 +572,11 @@ namespace F
             var count = (v?.Count).GetValueOrDefault();
             ByteBuff.PushLength(count);
             if (count > 0)
-            {
                 foreach (var item in v)
                 {
                     Push(item.Key);
                     PushSerializable(item.Value);
                 }
-            }
         }
 
         public void PushSerializable<T>(string key, T v) where T : IFSerializable
@@ -574,19 +599,13 @@ namespace F
 
         public void PushSerializable<T>(T v) where T : IFSerializable
         {
-            if (v != null)
-            {
-                v.Serialization(this);
-            }
+            if (v != null) v.Serialization(this);
         }
 
 
         public void ReadSerializable<T>(ref T v) where T : IFSerializable
         {
-            if (v != null)
-            {
-                v.Deserialization(this);
-             }
+            if (v != null) v.Deserialization(this);
         }
 
 
@@ -594,7 +613,7 @@ namespace F
         {
             var length = ByteBuff.ReadLength();
             if (length > 0) v = new T[length];
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 var se = InstanceT.CreateInstance<T>();
                 ReadSerializable(ref se);
@@ -616,6 +635,7 @@ namespace F
                 count--;
             }
         }
+
         public void ReadSerializable<T>(ref Dictionary<string, T> v) where T : IFSerializable
         {
             var count = ByteBuff.ReadLength();
@@ -629,6 +649,7 @@ namespace F
                 count--;
             }
         }
+
         public void ReadSerializable<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : IFSerializable
         {
             var count = ByteBuff.ReadLength();
@@ -638,16 +659,18 @@ namespace F
                 var key = Read<T>();
                 var valuesCount = ByteBuff.ReadLength();
                 var c = new T1[valuesCount];
-                for (int i = 0; i < valuesCount; i++)
+                for (var i = 0; i < valuesCount; i++)
                 {
                     var se = InstanceT.CreateInstance<T1>();
                     ReadSerializable(ref se);
                     c[i] = se;
                 }
+
                 v.Add(key, c);
                 count--;
             }
         }
+
         public void ReadSerializable<T1>(ref Dictionary<string, T1[]> v) where T1 : IFSerializable
         {
             var count = ByteBuff.ReadLength();
@@ -657,12 +680,13 @@ namespace F
                 var key = Read();
                 var valuesCount = ByteBuff.ReadLength();
                 var c = new T1[valuesCount];
-                for (int i = 0; i < valuesCount; i++)
+                for (var i = 0; i < valuesCount; i++)
                 {
                     var se = InstanceT.CreateInstance<T1>();
                     ReadSerializable(ref se);
                     c[i] = se;
                 }
+
                 v.Add(key, c);
                 count--;
             }
@@ -677,26 +701,36 @@ namespace F
         {
             return ByteBuff.Read();
         }
+
         /// <summary>
-        /// 读取压缩字节
+        ///     读取压缩字节
         /// </summary>
         /// <returns></returns>
-        public int ReadInt(ref int v) { return v = ByteBuff.ReadInt(); }
+        public int ReadInt(ref int v)
+        {
+            return v = ByteBuff.ReadInt();
+        }
 
-        public uint ReadUint(ref uint v) { return v = ByteBuff.ReadUint(); }
+        public uint ReadUint(ref uint v)
+        {
+            return v = ByteBuff.ReadUint();
+        }
 
         public uint[] ReadUint(ref uint[] v)
         {
             return v = ByteBuff.ReadUintArray();
         }
+
         public uint[][] ReadUint(ref uint[][] v)
         {
             return v = ByteBuff.ReadUintArray2();
         }
+
         public int[] ReadInt(ref int[] v)
         {
             return v = ByteBuff.ReadIntArray();
         }
+
         public int[][] ReadInt(ref int[][] v)
         {
             return v = ByteBuff.ReadIntArray2();
@@ -704,12 +738,11 @@ namespace F
 
         public T[] ReadArray<T>() where T : unmanaged
         {
-
             return ByteBuff.ReadArray<T>();
         }
+
         public string[] ReadArray()
         {
-
             return ByteBuff.ReadArray();
         }
 
@@ -722,6 +755,7 @@ namespace F
         {
             v = Read();
         }
+
         public void Read<T>(ref T[] v) where T : unmanaged
         {
             v = ReadArray<T>();
@@ -736,6 +770,7 @@ namespace F
         {
             return ByteBuff.ReadArray2<T>();
         }
+
         public string[][] ReadArray2()
         {
             return ByteBuff.ReadArray2();
@@ -753,133 +788,110 @@ namespace F
 
         public void Dispose()
         {
-            ByteBuff = default;
+            ByteBuff.Dispose();
         }
 
         public void Read<T, T1>(ref Dictionary<T, T1> v) where T : unmanaged where T1 : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<T, T1>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read<T>(), Read<T1>());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read<T>(), Read<T1>());
         }
+
         public void Read<T, T1>(ref Dictionary<T, T1[]> v) where T : unmanaged where T1 : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<T, T1[]>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read<T>(), ReadArray<T1>());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read<T>(), ReadArray<T1>());
         }
+
         public void Read<T, T1>(ref Dictionary<T, T1[][]> v) where T : unmanaged where T1 : unmanaged
         {
-
         }
+
         public void Read<T>(ref Dictionary<T, string> v) where T : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<T, string>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read<T>(), Read());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read<T>(), Read());
         }
+
         public void Read<T>(ref Dictionary<T, string[]> v) where T : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<T, string[]>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read<T>(), ReadArray());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read<T>(), ReadArray());
         }
+
         public void Read<T>(ref Dictionary<T, string[][]> v) where T : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<T, string[][]>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read<T>(), ReadArray2());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read<T>(), ReadArray2());
         }
+
         public void Read(ref Dictionary<string, string> v)
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<string, string>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read(), Read());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read(), Read());
         }
+
         public void Read(ref Dictionary<string, string[]> v)
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<string, string[]>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read(), ReadArray());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read(), ReadArray());
         }
+
         public void Read(ref Dictionary<string, string[][]> v)
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<string, string[][]>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read(), ReadArray2());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read(), ReadArray2());
         }
+
         public void Read<T>(ref Dictionary<string, T[][]> v) where T : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<string, T[][]>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read(), ReadArray2<T>());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read(), ReadArray2<T>());
         }
+
         public void Read<T1>(ref Dictionary<string, T1> v) where T1 : unmanaged
         {
             var count = ByteBuff.ReadLength();
             v = new Dictionary<string, T1>(count);
-            for (int i = 0; i < count; i++)
-            {
-                v.Add(Read(), Read<T1>());
-            }
+            for (var i = 0; i < count; i++) v.Add(Read(), Read<T1>());
         }
+
         #endregion
 
         #region list
+
         public void PushSerializable<T>(List<T> v) where T : IFSerializable
         {
-            int valueOrDefault = (v?.Count).GetValueOrDefault();
+            var valueOrDefault = (v?.Count).GetValueOrDefault();
             Push(valueOrDefault);
             if (valueOrDefault > 0)
-            {
-                foreach (T v2 in v)
-                {
+                foreach (var v2 in v)
                     PushSerializable(v2);
-                }
-            }
         }
+
         public List<T> ReadSerializable<T>(ref List<T> v) where T : IFSerializable, new()
         {
-            int num = Read<int>();
-            if (num > 0)
-            {
-                v = new List<T>(num);
-            }
-            for (int i = 0; i < num; i++)
+            var num = Read<int>();
+            if (num > 0) v = new List<T>(num);
+            for (var i = 0; i < num; i++)
             {
                 var val = new T();
                 ReadSerializable(ref val);
                 v.Add(val);
             }
+
             return v;
         }
+
         #endregion
     }
 }
