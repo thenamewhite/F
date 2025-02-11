@@ -7,18 +7,62 @@ namespace F
 {
     public class WorldTime
     {
+        public class DateTimeDown : IInitialization
+        {
+            internal Action<float> Callback;
+
+            /// <summary>
+            ///当前时间
+            /// </summary>
+            internal float CurrentTime;
+
+            /// <summary>
+            ///首次执行间隔时间
+            /// </summary>
+            internal float FirstTime;
+
+            /// <summary>
+            ///间隔时间
+            /// </summary>
+            internal float IntervalTime;
+
+            /// <summary>
+            ///执行次数
+            /// </summary>
+            internal int Num;
+
+            /// <summary>
+            /// 重新初始化
+            /// </summary>
+            void IInitialization.Initialization()
+            {
+            }
+
+            /// <summary>
+            ///     对象被回收
+            /// </summary>
+            void IInitialization.Release()
+            {
+                Num = default;
+                Callback = default;
+                IntervalTime = default;
+                CurrentTime = default;
+                FirstTime = default;
+            }
+        }
+
         /// <summary>
-        ///     受后台切换影响
+        /// 受后台切换影响
         /// </summary>
         private readonly HashSet<DateTimeDown> mDateTimes;
 
         /// <summary>
-        ///     不被后台切换受影响,每次调用都是固定时间
+        ///不被后台切换受影响,每次调用都是固定时间
         /// </summary>
         private readonly HashSet<DateTimeDown> mFixedDateTimes;
 
         /// <summary>
-        ///     每帧固定时间
+        ///每帧固定时间
         /// </summary>
         private readonly float mframeTime;
 
@@ -80,7 +124,7 @@ namespace F
         }
 
         /// <summary>
-        ///     移除定时器
+        /// 移除定时器
         /// </summary>
         /// <returns></returns>
         public void RemoveTime(Action<float> callback)
@@ -110,12 +154,13 @@ namespace F
         /// <param name="firstTime">首次间隔时间,如果小于等于0，马上执行一次callback函数</param>
         /// <param name="isFixed">是否是固定时间，如果是ture 每次callback<v> v 都是time</param>
         /// <returns></returns>
-        public DateTimeDown AddTime(float time, Action<float> callback, int num, float firstTime = float.MaxValue,
-            bool isFixed = true)
+        public DateTimeDown AddTime(float time, Action<float> callback, int num, float firstTime = float.MaxValue, bool isFixed = true)
         {
             foreach (var timeData in mDateTimes)
+            {
                 if (timeData.Callback == callback)
                     return timeData;
+            }
 
             var obj = mTimePool.New();
             obj.CurrentTime = mCurrentTime;
@@ -125,50 +170,6 @@ namespace F
             obj.FirstTime = firstTime == float.MaxValue ? float.MaxValue : firstTime;
             mDateTimes.Add(obj);
             return obj;
-        }
-
-        public class DateTimeDown : IInitialization
-        {
-            internal Action<float> Callback;
-
-            /// <summary>
-            ///     当前时间
-            /// </summary>
-            internal float CurrentTime;
-
-            /// <summary>
-            ///     首次执行间隔时间
-            /// </summary>
-            internal float FirstTime;
-
-            /// <summary>
-            ///     间隔时间
-            /// </summary>
-            internal float IntervalTime;
-
-            /// <summary>
-            ///     执行次数
-            /// </summary>
-            internal int Num;
-
-            /// <summary>
-            ///     重新初始化
-            /// </summary>
-            void IInitialization.Initialization()
-            {
-            }
-
-            /// <summary>
-            ///     对象被回收
-            /// </summary>
-            void IInitialization.Release()
-            {
-                Num = default;
-                Callback = default;
-                IntervalTime = default;
-                CurrentTime = default;
-                FirstTime = default;
-            }
         }
     }
 }

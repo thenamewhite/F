@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -26,8 +27,7 @@ namespace F
             }
             set
             {
-                Position = 0;
-                Length = value.Length;
+                Dispose();
                 Push(value);
             }
         }
