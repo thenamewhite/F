@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 // author  (hf) Date：2023/5/6 14:36:45
 namespace F
@@ -1164,6 +1165,37 @@ namespace F
             if (num > 0) v = new List<string>(num);
             for (var i = 0; i < num; i++) v.Add(Read());
             return v;
+        }
+
+
+
+
+        #endregion
+
+        #region 脚本
+        public void PushScriptSerializable<T>(string key, T v) where T : IFSerializableKey
+        {
+            var pos = BeginPush(key);
+            var name = v.GetType().FullName;
+            Push(name);
+            PushSerializable(v);
+            EndPush(pos);
+        }
+
+        public void ReadScriptSerializable<T>(ref T v) where T : IFSerializableKey
+        {
+            //string k = Read();
+            //var serLength = Read<int>();
+            var name = Read();
+            v = (T)InstanceT.CreateInstance(name);
+            ReadSerializable(ref v);
+        }
+
+        public void ReadScriptSerializable<T>(string key, ref T v, object[] objects) where T : IFSerializableKey
+        {
+            var name = Read();
+            v = (T)InstanceT.CreateInstance(name, objects);
+            ReadSerializable(ref v);
         }
 
         #endregion
