@@ -13,16 +13,16 @@ namespace F
     public class SerializableKey : IDisposable
     {
         //public ByteStream ByteBuff = new ByteStream();
-        public ByteStreamFixed ByteBuff;
+        public ByteStream ByteBuff;
 
         public SerializableKey(byte[] bytes)
         {
-            ByteBuff = new ByteStreamFixed(bytes);
+            ByteBuff = new ByteStream(bytes);
         }
 
         public SerializableKey(Span<byte> bytes)
         {
-            ByteBuff = new ByteStreamFixed(bytes);
+            ByteBuff = new ByteStream(bytes);
         }
 
         public SerializableKey()

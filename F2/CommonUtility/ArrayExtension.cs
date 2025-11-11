@@ -36,7 +36,7 @@ namespace F
         public static void Add<T>(ref T[] array, T value)
         {
             Array.Resize(ref array, array.Length + 1);
-            array[array.Length - 1] = value;
+            array[^1] = value;
         }
         /// <summary>
         /// 数组尾部添加值

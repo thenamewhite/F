@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
-
+# if DEBUG
 namespace Fix64Number
 {
 
@@ -1077,3 +1077,4 @@ namespace Fix64Number
         }
     }
 }
+#endif

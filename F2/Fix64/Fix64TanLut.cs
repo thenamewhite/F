@@ -1,3 +1,5 @@
+
+# if DEBUG
 namespace Fix64Number
 {
     partial struct Fix64 
@@ -25743,3 +25745,6 @@ namespace Fix64Number
         };
     }
 }
+
+
+#endif

@@ -2,25 +2,23 @@
 
 namespace F
 {
-    public struct EventListenerData<T> : IEquatable<EventListenerData<T>> where T : struct
+    internal struct EventListenerData<T> : IEquatable<EventListenerData<T>>
     {
-        public T Value;
-
-        ///// <summary>
-        ///// 是否退出后续触发
-        ///// </summary>
-        //public bool IsBreak;
         internal readonly int Level;
         internal readonly bool IsOnce;
-        internal readonly Action<EventListenerData<T>> Action;
-
-        public EventListenerData(int level, bool isOnce, Action<EventListenerData<T>> action)
+        internal readonly Action<EventData<T>> Action;
+        public EventListenerData(int level, bool isOnce, Action<EventData<T>> action)
         {
-            //this.IsBreak = isBreak;
             Level = level;
             IsOnce = isOnce;
             Action = action;
-            Value = default;
+        }
+
+        public EventListenerData(int level, bool isOnce, object action)
+        {
+            Level = level;
+            IsOnce = isOnce;
+            Action = (Action<EventData<T>>)action;
         }
 
 

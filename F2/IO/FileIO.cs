@@ -148,9 +148,9 @@ namespace F
         public static byte[] WriteBytesDict(Dictionary<string, IFSerializableKey> v)
         {
             using (var s = new SerializableKey
-                   {
-                       ByteBuff = new ByteStreamFixed(1024 * 1024)
-                   })
+            {
+                ByteBuff = new ByteStream(1024 * 1024)
+            })
             {
                 s.PushLength(v.Count);
                 foreach (var item in v)

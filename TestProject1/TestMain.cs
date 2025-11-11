@@ -1,20 +1,18 @@
-
 using F;
+using System.Diagnostics;
 using System.Runtime.Serialization.Formatters.Binary;
+
 namespace TestProject1
 {
-
-
     public class TestMain : IInitialization
     {
-
-
         public ObjectPool<TestMain> objectPool;
 
         public void T()
         {
             var c = objectPool.New();
         }
+
         public struct Sta : IFSerializableKey
         {
             public int a;
@@ -47,8 +45,8 @@ namespace TestProject1
                 serializable.Push(nameof(b), b);
                 serializable.Push("c", 1);
             }
-           
         }
+
         public class TestF : IFSerializable
         {
             public void Deserialization(Serializable serializable)
@@ -60,15 +58,50 @@ namespace TestProject1
             }
         }
 
-
+        public static void Main(string[] args)
+        {
+            Tes();
+        }
 
         public class BB : EventListener
         {
 
+
+
+            public override void AddListenerEvent<T>(Action<EventData<T>> action, int level = 0, bool isOnce = false)
+            {
+                base.AddListenerEvent<T>(action, level, isOnce);
+            }
+
+
+
             public void bb()
             {
-
+                this.AddListenerEvent<string>(OnAbbHander, 1);
+                var byteStem = new ByteStream();
+                byteStem.Push(1);
+                //this.AddListenerEvent<abb>(OnAbbHander, 1);
+                //this.AddListenerEvent<abb>(OnAbbHander2);
             }
+
+            private void OnAbbHander(EventData<string> data)
+            {
+                data.StopImmediatePropagation();
+                //data.StopImmediatePropagation();
+                //this.RemoveListenerEvent<abb>(OnAbbHander);
+                //this.AddListenerEvent<b>(OnB);
+                //this.RemoveListenerEvent<abb>(OnAbbHander);
+                //data.Break();
+            }
+
+            private void OnAbbHander2(EventData<abb> v)
+            {
+
+                v.Value.x = 2;
+                //var c = 1;
+            }
+
+
             //public void aOnEventHandler(EventListenerData<abb> eventListener)
             //{
 
@@ -79,6 +112,7 @@ namespace TestProject1
         {
             public int x;
         }
+
         public struct b
         {
         }
@@ -89,10 +123,16 @@ namespace TestProject1
         /// <param name="v2">啊啊</param>
         public static void Tes()
         {
+            var B = new BB();
+            B.bb();
+
+
+            var ddd = new TestMain.abb() { };
+            B.DispatchEvent<abb>(ddd);
+            B.DispatchEvent<b>(new TestMain.b() { });
 
 
             var mBuffer = new byte[] { };
-            mBuffer.Add<byte>(1);
             //for (int i = 0; i < 10; i++)
             //{
             //    byte v = 0;s
@@ -110,6 +150,7 @@ namespace TestProject1
             {
                 a.Push(inde);
             }
+
             double aa = 1;
             var sp = new Span<byte>();
             //a.Push(-1, ref sp);
@@ -126,8 +167,6 @@ namespace TestProject1
             //var st = new Stream();
             var f = new BinaryFormatter();
         }
-
-
 
 
         static List<int> GenerateRandomArray(int targetSum, int minValue, int length)
@@ -155,15 +194,6 @@ namespace TestProject1
         }
 
 
-
-        public static void Main()
-        {
-            sbyte b = -127;
-
-            var cccc = new ByteStream();
-            cccc.Push(b);
-        }
-
         public void Initialization()
         {
         }
@@ -176,11 +206,13 @@ namespace TestProject1
         {
             public int X { get; set; }
             public int Y { get; set; }
-            public PointSctruct()//C#10以后允许struct声明无参构造函数
+
+            public PointSctruct() //C#10以后允许struct声明无参构造函数
             {
                 X = 1;
                 Y = 2;
             }
+
             public PointSctruct(int x, int y)
             {
                 X = x;
@@ -191,11 +223,9 @@ namespace TestProject1
         [Flags]
         public enum Ea
         {
-
             V = 1,
             V2 = 2,
             v3 = 3,
         }
-
     }
 }
