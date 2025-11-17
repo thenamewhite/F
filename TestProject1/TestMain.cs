@@ -67,26 +67,21 @@ namespace TestProject1
         {
 
 
-
-            public override void AddListenerEvent<T>(Action<EventData<T>> action, int level = 0, bool isOnce = false)
-            {
-                base.AddListenerEvent<T>(action, level, isOnce);
-            }
-
-
-
+            private Delegate a;
             public void bb()
             {
-                this.AddListenerEvent<string>(OnAbbHander, 1);
+                //this.AddEventListener<string>(OnAbbHander, 1);
                 var byteStem = new ByteStream();
                 byteStem.Push(1);
-                //this.AddListenerEvent<abb>(OnAbbHander, 1);
-                //this.AddListenerEvent<abb>(OnAbbHander2);
+                this.AddEventListener<abb>(OnAbbHander, 1);
+                a = OnAbbHander;
+                this.DispatchEvent(new abb());
             }
 
-            private void OnAbbHander(EventData<string> data)
+            private void OnAbbHander(EventData<abb> data)
             {
                 data.StopImmediatePropagation();
+                this.RemoveEventListener(typeof(abb), a);
                 //data.StopImmediatePropagation();
                 //this.RemoveListenerEvent<abb>(OnAbbHander);
                 //this.AddListenerEvent<b>(OnB);
@@ -127,9 +122,9 @@ namespace TestProject1
             B.bb();
 
 
-            var ddd = new TestMain.abb() { };
-            B.DispatchEvent<abb>(ddd);
-            B.DispatchEvent<b>(new TestMain.b() { });
+            //var ddd = new TestMain.abb() { };
+            //B.DispatchEvent<abb>(ddd);
+            //B.DispatchEvent<b>(new TestMain.b() { });
 
 
             var mBuffer = new byte[] { };

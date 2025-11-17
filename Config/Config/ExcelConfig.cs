@@ -412,7 +412,7 @@ namespace F
 
             foreach (var value in vlaueFileds)
             {
-                serializable.Bytes = default;
+                //serializable.Bytes = default;
                 key = Convert.ToInt32(value.Value[0]);
                 dict.Add(key, new byte[0]);
                 for (int i = 0; i < classFiledType.Count; i++)
@@ -443,7 +443,7 @@ namespace F
                             break;
                     }
                 }
-                dict[key] = serializable.Bytes;
+                //dict[key] = serializable.Bytes;
             }
 
             st.AppendLine("\n");

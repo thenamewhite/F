@@ -96,20 +96,21 @@ namespace F
         /// <returns></returns>
         public static bool IsRayIntersectingSphere(Vector3 origin, Vector3 direction, Vector3 center, float radius)
         {
-            // 球心到射线起点向量
-            Vector3 Voc = center - origin;
+            //// 球心到射线起点向量
+            //Vector3 Voc = center - origin;
 
-            // 射线起点到球心向量在射线方向上的投影
-            float Poc = Vector3.Dot(Voc, direction);
+            //// 射线起点到球心向量在射线方向上的投影
+            //float Poc = Vector3.Dot(Voc, direction);
 
-            // 球心到射线的最短距离平方
-            float dSquared = Vector3.Dot(Voc, Voc) - Poc * Poc;
+            //// 球心到射线的最短距离平方
+            //float dSquared = Vector3.Dot(Voc, Voc) - Poc * Poc;
 
-            // 最短距离
-            float d = MathF.Sqrt(dSquared);
+            //// 最短距离
+            //float d = MathF.Sqrt(dSquared);
 
-            // 判断相交情况
-            return d <= radius;
+            //// 判断相交情况
+            //return d <= radius;
+            return false;
         }
     }
 

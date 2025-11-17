@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+	  <TargetFramework>net48</TargetFramework>
+	  <LangVersion>8.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UserSecretsId>bb319b33-24fe-4109-93ed-caa130e7f97d</UserSecretsId>
   </PropertyGroup>

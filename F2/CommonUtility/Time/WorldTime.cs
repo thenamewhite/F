@@ -51,6 +51,7 @@ namespace F
             }
         }
 
+        public WorldTimeScale TimeScale;
         /// <summary>
         /// 受后台切换影响
         /// </summary>
@@ -74,7 +75,7 @@ namespace F
         {
             mframeTime = 1f / frameRate;
             //微信环境下 直接在字段上实例化会报错找不到类型
-            mFixedDateTimes = mDateTimes = new HashSet<DateTimeDown>(8);
+            mFixedDateTimes = mDateTimes = new HashSet<DateTimeDown>(16);
             mTimePool = new ObjectPool<DateTimeDown>();
         }
 

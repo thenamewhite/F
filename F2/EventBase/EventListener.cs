@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 // author  (hf) time：2023/2/16 10:38:20
@@ -12,7 +10,7 @@ namespace F
     /// </summary>
     public class EventListener
     {
-        private readonly Dictionary<Type, object> _mKeyValuePairs = new Dictionary<Type, object>();
+        protected readonly Dictionary<Type, object> MKeyValuePairs = new Dictionary<Type, object>();
 
         private readonly Dictionary<Type, List<Listener>> _addCache = new Dictionary<Type, List<Listener>>();
         private readonly Dictionary<Type, List<Listener>> _removeCache = new Dictionary<Type, List<Listener>>();
@@ -26,40 +24,40 @@ namespace F
         /// <returns></returns>
         /// <summary>
         /// </summary>
-        public virtual bool IsHasAddListenerEvent<T>(Action<EventData<T>> action)
+        public virtual bool IsHasAddEventListener<T>(Action<EventData<T>> action)
         {
             var type = typeof(T);
-            if (_mKeyValuePairs.TryGetValue(type, out var t))
+            if (MKeyValuePairs.TryGetValue(type, out var t))
             {
                 var listAction = (ListActionT<T>)t;
-                foreach (var item in listAction.ListActions)
-                    if (item.Action == action)
-                        return true;
+                return listAction.IsHasAddEventListener(action);
             }
 
             return false;
         }
+
         /// <summary>
         ///相同函数，相同类型只能注入一个
         /// </summary>
         /// <param name="action"></param>
         /// <param name="level"></param>
         /// <param name="isOnce"></param>
-        public virtual void AddListenerEvent<T>(Action<EventData<T>> action, int level = 0, bool isOnce = false)
+        public virtual bool AddEventListener<T>(Action<EventData<T>> action, int level = 0, bool isOnce = false)
         {
             var type = typeof(T);
-            _mKeyValuePairs.TryGetValue(type, out var t);
+            MKeyValuePairs.TryGetValue(type, out var t);
             var listAction = Unsafe.As<ListActionT<T>>(t);
             if (t == null)
             {
                 listAction = new ListActionT<T> { };
-                _mKeyValuePairs.Add(type, listAction);
+                MKeyValuePairs.Add(type, listAction);
             }
             else
             {
-                foreach (var item in listAction.ListActions)
-                    if (item.Action == action)
-                        return;
+                if (listAction.IsHasAddEventListener(action))
+                {
+                    return false;
+                }
             }
 
             if (_isDispatching)
@@ -70,30 +68,17 @@ namespace F
                     _addCache[type] = list;
                 }
 
-                object tt = action;
                 list.Add(new Listener()
                 {
                     Action = action,
                     Level = level,
                     IsOnce = isOnce
                 });
-                return;
+                return true;
             }
 
-            var eventT = new EventListenerData<T>(level, isOnce, action);
-            var eventCount = listAction.ListActions.Count;
-            //按照level 优先级排序 ,小在前，因为派发时候 是倒序派发
-            for (var i = 0; i < eventCount; i++)
-            {
-                var eventLevel = listAction.ListActions[i].Level;
-                if (level < eventLevel)
-                {
-                    listAction.ListActions.Insert(i, eventT);
-                    return;
-                }
-            }
-
-            listAction.ListActions.Add(eventT);
+            listAction.AddEvent(new EventListenerData<T>(level, isOnce, action));
+            return true;
         }
 
         private void FlushPendingAdds()
@@ -107,43 +92,51 @@ namespace F
             foreach (var obj in data)
             {
                 var t = obj.Value;
+                ///后续优化下,不频繁创建list
                 foreach (var v in t)
                 {
-                    var d = _mKeyValuePairs[obj.Key] as IFEvent;
+                    var e = MKeyValuePairs[obj.Key] as IFEvent;
                     if (isAdd)
                     {
-                        d.AddEvent(v);
+                        e.AddEvent(v);
                     }
                     else
                     {
-                        d.RemoveEvent(v);
+                        e.RemoveEvent(v.Action);
                     }
                 }
-            }
 
-            foreach (var item in data)
-            {
-                item.Value.Clear();
+                obj.Value.Clear();
             }
 
             data.Clear();
         }
 
-        public virtual void RemoveListenerEvents(Type type)
+        public virtual void RemoveEventListeners(Type type)
         {
-            if (_mKeyValuePairs.Remove(type, out var t)) (t as IDisposable).Dispose();
+            if (MKeyValuePairs.TryGetValue(type, out var t)) (t as IDisposable).Dispose();
         }
 
-        public virtual void RemoveListenerEvents<T>()
+        public virtual void RemoveEventListeners<T>()
         {
-            if (_mKeyValuePairs.TryGetValue(typeof(T), out var t)) (t as IDisposable).Dispose();
+            if (MKeyValuePairs.TryGetValue(typeof(T), out var t)) (t as IDisposable).Dispose();
         }
 
-        public virtual void RemoveListenerEvent<T>(Action<EventData<T>> action)
+        public virtual void RemoveEventListener<T>(Action<EventData<T>> action)
         {
             var type = typeof(T);
+            RemoveEventListener(type, action);
+        }
 
-            if (_mKeyValuePairs.TryGetValue(type, out var t))
+        public void RemoveEventListener<T>(Delegate action)
+        {
+            var type = typeof(T);
+            RemoveEventListener(type, action);
+        }
+
+        public void RemoveEventListener(Type type, Delegate action)
+        {
+            if (MKeyValuePairs.TryGetValue(type, out var t))
             {
                 if (_isDispatching)
                 {
@@ -157,13 +150,8 @@ namespace F
                     return;
                 }
 
-                var data = ((ListActionT<T>)t).ListActions;
-                for (var i = 0; i < data.Count; i++)
-                    if (data[i].Action == action)
-                    {
-                        data.RemoveAt(i);
-                        break;
-                    }
+                var data = t as IFEvent;
+                data.RemoveEvent(action);
             }
         }
 
@@ -171,42 +159,18 @@ namespace F
         public virtual void DispatchEvent<T>(T param)
         {
             var type = typeof(T);
+            var isOldDispatching = _isDispatching;
             _isDispatching = true;
-            if (_mKeyValuePairs.TryGetValue(type, out var t))
+            if (MKeyValuePairs.TryGetValue(type, out var t))
             {
                 var e = Unsafe.As<ListActionT<T>>(t);
-                var data = e.ListActions;
-                var count = data.Count;
-                var p = param;
-                for (var i = count - 1; i >= 0; i--)
-                {
-                    if (i >= data.Count) continue;
-
-                    var d = data[i];
-                    e.Value = p;
-                    try
-                    {
-                        d.Action(e);
-                    }
-                    catch (Exception err)
-                    {
-                        throw new Exception($"{err.StackTrace},{err}");
-                    }
-                    finally
-                    {
-                        if (d.IsOnce) data.Remove(d);
-                    }
-
-                    if (e.IsStopImmediatePropagation)
-                    {
-                        e.IsStopImmediatePropagation = false;
-                        break;
-                    }
-                }
+                e.DispatchEvent(param);
             }
-
-            FlushPendingAdds();
-            _isDispatching = false;
+            if (!isOldDispatching)
+            {
+                FlushPendingAdds();
+            }
+            _isDispatching = isOldDispatching;
         }
 
         /// <summary>
@@ -214,15 +178,12 @@ namespace F
         /// </summary>
         public void ClearEvent()
         {
-            foreach (var t in _mKeyValuePairs.Values)
+            foreach (var t in MKeyValuePairs.Values)
             {
                 (t as IDisposable).Dispose();
             }
 
-            _mKeyValuePairs.Clear();
+            MKeyValuePairs.Clear();
         }
-
-
-
     }
 }

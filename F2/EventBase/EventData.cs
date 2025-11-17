@@ -1,7 +1,5 @@
-﻿using F;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace F
 {
@@ -11,7 +9,11 @@ namespace F
         public T Value;
 
         public abstract void StopImmediatePropagation();
+        //abstract internal void RemoveHandler();
+
+        //abstract internal void AddHandler();
     }
+
     internal class ListActionT<T> : EventData<T>, IFEvent
     {
         public List<EventListenerData<T>> ListActions { get; private set; } = new List<EventListenerData<T>>(4);
@@ -29,31 +31,73 @@ namespace F
 
         public void AddEvent(Listener action)
         {
-            ListActions.Add(new EventListenerData<T>(action.Level, action.IsOnce, action.Action) { });
+            var eventT = new EventListenerData<T>(action.Level, action.IsOnce, action.Action) { };
+            AddEvent(eventT);
         }
 
-        public void AddEvent(EventListenerData<T> action)
+        public void AddEvent(EventListenerData<T> eventT)
         {
-            ListActions.Add(action);
+            var eventCount = ListActions.Count;
+            //按照level 优先级排序 ,小在前，因为派发时候 是倒序派发
+            for (var i = 0; i < eventCount; i++)
+            {
+                var eventLevel = ListActions[i].Level;
+                if (eventT.Level < eventLevel)
+                {
+                    ListActions.Insert(i, eventT);
+                    return;
+                }
+            }
+
+            ListActions.Add(eventT);
         }
 
-        public void RemoveEvent(EventListenerData<T> action)
+        public bool IsHasAddEventListener(Action<EventData<T>> action)
         {
             foreach (var v in ListActions)
             {
-                if (v.Action == action.Action)
+                if (v.Action == action)
                 {
-                    ListActions.Remove(v);
+                    return true;
+                }
+            }
+            return false;
+        }
+        public virtual void DispatchEvent(T param)
+        {
+            var data = ListActions;
+            var count = data.Count;
+            var p = param;
+            for (var i = count - 1; i >= 0; i--)
+            {
+                if (i >= data.Count) continue;
+                var d = data[i];
+                Value = p;
+                try
+                {
+                    d.Action(this);
+                }
+                catch (Exception err)
+                {
+                    throw new Exception($"{err.StackTrace},{err}");
+                }
+                finally
+                {
+                    if (d.IsOnce) data.Remove(d);
+                }
+                if (IsStopImmediatePropagation)
+                {
+                    IsStopImmediatePropagation = false;
                     break;
                 }
             }
         }
 
-        public void RemoveEvent(Listener action)
+        public void RemoveEvent(Delegate action)
         {
             foreach (var t in ListActions)
             {
-                if (t.Action == (Action<EventData<T>>)action.Action)
+                if (t.Action == (Action<EventData<T>>)action)
                 {
                     ListActions.Remove(t);
                     break;
