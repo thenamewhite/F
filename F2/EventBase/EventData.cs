@@ -5,7 +5,7 @@ namespace F
 {
     public abstract class EventData<T>
     {
-        internal bool IsStopImmediatePropagation;
+        public bool IsStopImmediatePropagation { protected set; get; }
         public T Value;
 
         public abstract void StopImmediatePropagation();
@@ -16,6 +16,7 @@ namespace F
 
     internal class ListActionT<T> : EventData<T>, IFEvent
     {
+
         public List<EventListenerData<T>> ListActions { get; private set; } = new List<EventListenerData<T>>(4);
 
         public void Dispose()

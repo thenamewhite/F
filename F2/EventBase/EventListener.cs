@@ -24,7 +24,7 @@ namespace F
         /// <returns></returns>
         /// <summary>
         /// </summary>
-        public virtual bool IsHasAddEventListener<T>(Action<EventData<T>> action)
+        public virtual bool IsHasAddEventListener<T>(Action<EventData<T>> action) where T : new()
         {
             var type = typeof(T);
             if (MKeyValuePairs.TryGetValue(type, out var t))
@@ -42,7 +42,7 @@ namespace F
         /// <param name="action"></param>
         /// <param name="level"></param>
         /// <param name="isOnce"></param>
-        public virtual bool AddEventListener<T>(Action<EventData<T>> action, int level = 0, bool isOnce = false)
+        public virtual bool AddEventListener<T>(Action<EventData<T>> action, int level = 0, bool isOnce = false) where T : new()
         {
             var type = typeof(T);
             MKeyValuePairs.TryGetValue(type, out var t);
@@ -156,21 +156,24 @@ namespace F
         }
 
 
-        public virtual void DispatchEvent<T>(T param)
+        public virtual bool DispatchEvent<T>(T param) where T : new()
         {
             var type = typeof(T);
             var isOldDispatching = _isDispatching;
             _isDispatching = true;
+            var isStopImmediatePropagation = false;
             if (MKeyValuePairs.TryGetValue(type, out var t))
             {
                 var e = Unsafe.As<ListActionT<T>>(t);
                 e.DispatchEvent(param);
+                isStopImmediatePropagation = e.IsStopImmediatePropagation;
             }
             if (!isOldDispatching)
             {
                 FlushPendingAdds();
             }
             _isDispatching = isOldDispatching;
+            return isStopImmediatePropagation;
         }
 
         /// <summary>
